@@ -4,10 +4,10 @@ use std::collections::HashSet;
 use hpo::annotations::{GeneId, OmimDiseaseId};
 use std::hash::Hash;
 
-use crate::get_ontology;
+use crate::{get_ontology, set::PyHpoSet};
 
 #[pyclass(name = "Gene")]
-pub struct PyGene {
+pub(crate) struct PyGene {
     id: GeneId,
     name: String,
 }
@@ -47,11 +47,30 @@ impl PyGene {
     ///     from hpo3 import Ontology
     ///     ont = Ontology()
     ///     gene = ont.genes()[0]
-    ///     gene.name()  # ==> 'BRCA2'
+    ///     gene.name()
+    ///     # >> 'BRCA2'
     ///
     #[getter(name)]
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    #[getter(hpo)]
+    pub fn hpo(&self) -> PyResult<HashSet<u32>> {
+        let ont = get_ontology()?;
+        Ok(ont
+            .gene(&self.id)
+            .expect("ontology must. be present and gene must be included")
+            .hpo_terms()
+            .iter()
+            .fold(HashSet::new(), |mut set, tid| {
+                set.insert(tid.as_u32());
+                set
+            }))
+    }
+
+    fn hpo_set(&self) -> PyResult<PyHpoSet> {
+        PyHpoSet::try_from(self)
     }
 
     #[classmethod]
@@ -159,6 +178,10 @@ impl PyOmimDisease {
                 set
             },
         ))
+    }
+
+    fn hpo_set(&self) -> PyResult<PyHpoSet> {
+        PyHpoSet::try_from(self)
     }
 
     #[classmethod]

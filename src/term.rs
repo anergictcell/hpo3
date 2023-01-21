@@ -33,8 +33,11 @@ impl PyHpoTerm {
     /// This method assumes that this operation
     /// will succeed because the term should exist
     fn hpo(&self) -> hpo::HpoTerm {
-        let ont = ONTOLOGY.get().expect("ontology must exist when a term is present");
-        ont.hpo(self.id).expect("the term itself must exist in the ontology")
+        let ont = ONTOLOGY
+            .get()
+            .expect("ontology must exist when a term is present");
+        ont.hpo(self.id)
+            .expect("the term itself must exist in the ontology")
     }
 }
 
@@ -267,7 +270,9 @@ impl PyHpoTerm {
     #[pyo3(text_signature = "($self)")]
     fn shortest_path_to_root(&self) -> usize {
         let root = term_from_id(1).expect("the root must exist");
-        self.hpo().distance_to_ancestor(&root).expect("the root term must be an ancestor")
+        self.hpo()
+            .distance_to_ancestor(&root)
+            .expect("the root term must be an ancestor")
     }
 
     #[pyo3(text_signature = "($self, other)")]
@@ -286,7 +291,10 @@ impl PyHpoTerm {
         (
             path.len() as f32,
             path.iter()
-                .map(|id| pyterm_from_id(id.as_u32()).expect("the term must exist because its an ancestor term"))
+                .map(|id| {
+                    pyterm_from_id(id.as_u32())
+                        .expect("the term must exist because its an ancestor term")
+                })
                 .collect(),
         )
     }
@@ -358,7 +366,7 @@ impl PyHpoTerm {
     ///     # compare HP:0011968 and HP:0001743 using Gene
     ///     term.similarity(1743, kind="gene")
     ///
-    #[args(kind = "\"omim\"", method = "\"graphic\"")]
+    #[pyo3(signature = (other, kind = "omim", method = "graphic"))]
     #[pyo3(text_signature = "($self, other, kind, method)")]
     fn similarity_score(&self, other: &PyHpoTerm, kind: &str, method: &str) -> PyResult<f32> {
         let kind = PyInformationContentKind::try_from(kind)?;
@@ -371,7 +379,7 @@ impl PyHpoTerm {
         Ok(similarity.calculate(&term_a, &term_b))
     }
 
-    #[args(verbose = "false")]
+    #[pyo3(signature = (verbose = false))]
     #[pyo3(text_signature = "($self, verbose)")]
     #[allow(non_snake_case)]
     pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<&PyDict> {
@@ -416,7 +424,8 @@ impl PyHpoTerm {
 
 impl From<&PyHpoTerm> for hpo::HpoTerm<'static> {
     fn from(value: &PyHpoTerm) -> hpo::HpoTerm<'static> {
-        term_from_id(value.id.as_u32()).expect("term must exist in ontology since it comes from an HPOTerm")
+        term_from_id(value.id.as_u32())
+            .expect("term must exist in ontology since it comes from an HPOTerm")
     }
 }
 

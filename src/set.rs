@@ -1,6 +1,9 @@
 use std::collections::HashSet;
 use std::num::ParseIntError;
 
+use hpo::Ontology;
+use rayon::prelude::*;
+
 use hpo::similarity::{GroupSimilarity, StandardCombiner};
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::types::PyDict;
@@ -16,7 +19,8 @@ use crate::{
 use crate::{term_from_query, PyQuery};
 
 #[pyclass(name = "HPOSet")]
-pub struct PyHpoSet {
+#[derive(Clone)]
+pub(crate) struct PyHpoSet {
     ids: HpoGroup,
 }
 
@@ -33,6 +37,19 @@ impl From<HpoSet<'_>> for PyHpoSet {
     }
 }
 
+/// A set of HPO terms
+///
+/// Examples
+/// --------
+///
+/// .. code-block: python
+///
+///     from hpo3 import Ontology, HPOSet
+///     ont = Ontology()
+///     s = HPOSet([1, 118])
+///     len(s)  
+///     # >> 2
+///
 #[pymethods]
 impl PyHpoSet {
     #[new]
@@ -68,7 +85,9 @@ impl PyHpoSet {
         Ok(HpoSet::new(ont, self.ids.clone()).gene_ids().iter().fold(
             HashSet::new(),
             |mut set, gene_id| {
-                set.insert(PyGene::from(ont.gene(gene_id).expect("gene must be present in ontology if it is connected to a term")));
+                set.insert(PyGene::from(ont.gene(gene_id).expect(
+                    "gene must be present in ontology if it is connected to a term",
+                )));
                 set
             },
         ))
@@ -80,12 +99,14 @@ impl PyHpoSet {
             .omim_disease_ids()
             .iter()
             .fold(HashSet::new(), |mut set, disease_id| {
-                set.insert(PyOmimDisease::from(ont.omim_disease(disease_id).expect("disease must be present in ontology if it is connected to a term")));
+                set.insert(PyOmimDisease::from(ont.omim_disease(disease_id).expect(
+                    "disease must be present in ontology if it is connected to a term",
+                )));
                 set
             }))
     }
 
-    #[args(kind = "\"omim\"")]
+    #[pyo3(signature = (kind = "omim"))]
     fn information_content<'a>(&'a self, py: Python<'a>, kind: &str) -> PyResult<&PyDict> {
         let kind = PyInformationContentKind::try_from(kind)?;
         let ont = get_ontology()?;
@@ -127,8 +148,22 @@ impl PyHpoSet {
         unimplemented!()
     }
 
-    #[args(kind = "\"omim\"", method = "\"graphic\"", combine = "\"funSimAvg\"")]
-    #[pyo3(text_signature = "($self, other, kind)")]
+    /// Calculate similarity between this and another `HPOSet`
+    ///
+    /// This method runs parallelized on all avaible CPU
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from hpo3 import Ontology
+    ///     ont = Ontology()
+    ///     gene_sets = [g.hpo_set() for g in Ontology.genes]
+    ///     gene_sets[0].similarity(gene_sets[1])
+    ///     0.29546087980270386
+    ///
+    #[pyo3(signature = (other, kind = "omim", method = "graphic", combine = "funSimAvg"))]
+    #[pyo3(text_signature = "($self, other, kind, method, combine)")]
     fn similarity(
         &self,
         other: &PyHpoSet,
@@ -150,6 +185,50 @@ impl PyHpoSet {
         let g_sim = GroupSimilarity::new(combiner, similarity);
 
         Ok(g_sim.calculate(&set_a, &set_b))
+    }
+
+    /// Calculate similarity between this `HPOSet` and a list of other `HPOSet`s
+    ///
+    /// This method runs parallelized on all avaible CPU
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from hpo3 import Ontology
+    ///     ont = Ontology()
+    ///     gene_sets = [g.hpo_set() for g in Ontology.genes]
+    ///     similarities = gene_sets[0].batch_similarity(gene_sets)
+    ///     similarities[0:4]
+    ///     [1.0, 0.5000048279762268, 0.29546087980270386, 0.5000059008598328]
+    ///
+    #[pyo3(signature =(other, kind = "omim", method = "graphic", combine = "funSimAvg"))]
+    #[pyo3(text_signature = "($self, other, kind, method, combine)")]
+    fn batch_similarity(
+        &self,
+        other: Vec<PyHpoSet>,
+        kind: &str,
+        method: &str,
+        combine: &str,
+    ) -> PyResult<Vec<f32>> {
+        let ont = get_ontology()?;
+        let set_a = HpoSet::new(ont, self.ids.clone());
+
+        let kind = PyInformationContentKind::try_from(kind)?;
+        let similarity = hpo::similarity::Builtins::new(method, kind.into())
+            .map_err(|_| PyRuntimeError::new_err("Unknown method to calculate similarity"))?;
+        let combiner = StandardCombiner::try_from(combine)
+            .map_err(|_| PyRuntimeError::new_err("Invalid combine method specified"))?;
+
+        let g_sim = GroupSimilarity::new(combiner, similarity);
+
+        Ok(other
+            .par_iter()
+            .map(|sb| {
+                let set_b = HpoSet::new(ont, sb.ids.clone());
+                g_sim.calculate(&set_a, &set_b)
+            })
+            .collect())
     }
 
     #[allow(non_snake_case)]
@@ -186,11 +265,72 @@ impl PyHpoSet {
             .collect::<Result<Vec<u32>, ParseIntError>>()?
             .iter()
             .map(|id| HpoTermId::from(*id))
-            .collect::<PyHpoSet>()
-        )
+            .collect::<PyHpoSet>())
+    }
+
+    #[classmethod]
+    pub fn from_gene(_cls: &PyType, gene: &PyGene) -> PyResult<Self> {
+        gene.try_into()
+    }
+
+    #[classmethod]
+    pub fn from_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<Self> {
+        disease.try_into()
     }
 
     fn __len__(&self) -> usize {
         self.ids.len()
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "HPOSet.from_serialized({})",
+            self.ids
+                .iter()
+                .map(|i| i.as_u32().to_string())
+                .collect::<Vec<String>>()
+                .join(",")
+        )
+    }
+
+    fn __str__(&self) -> String {
+        format!(
+            "HPOSet: {}",
+            self.ids
+                .iter()
+                .map(|id| id.to_string())
+                .collect::<Vec<String>>()
+                .join(",")
+        )
+    }
+}
+
+impl<'a> PyHpoSet {
+    pub fn set(&'a self, ont: &'a Ontology) -> HpoSet {
+        HpoSet::new(ont, self.ids.clone())
+    }
+}
+
+impl TryFrom<&PyGene> for PyHpoSet {
+    type Error = PyErr;
+    fn try_from(gene: &PyGene) -> Result<Self, Self::Error> {
+        let ont = get_ontology()?;
+        Ok(ont
+            .gene(&gene.id().into())
+            .expect("ontology must. be present and gene must be included")
+            .to_hpo_set(ont)
+            .into())
+    }
+}
+
+impl TryFrom<&PyOmimDisease> for PyHpoSet {
+    type Error = PyErr;
+    fn try_from(disease: &PyOmimDisease) -> Result<Self, Self::Error> {
+        let ont = get_ontology()?;
+        Ok(ont
+            .omim_disease(&disease.id().into())
+            .expect("ontology must. be present and gene must be included")
+            .to_hpo_set(ont)
+            .into())
     }
 }

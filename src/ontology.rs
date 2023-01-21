@@ -201,7 +201,7 @@ impl PyOntology {
     ///     Path to the source files (default: `./ontology.hpo`)
     /// binary: bool
     ///     Whether the input format is binary (default true)
-    #[args(path = "\"ontology.hpo\"", binary = "true")]
+    #[pyo3(signature = (path = "ontology.hpo", binary = true))]
     fn __call__(&self, path: &str, binary: bool) {
         if binary {
             from_binary(path);
@@ -238,7 +238,7 @@ impl PyOntology {
     fn __repr__(&self) -> String {
         match get_ontology() {
             Ok(ont) => format!("<hpo3.Ontology with {} terms>", ont.len()),
-            _ => String::from("<hpo3.Ontology (no data loaded, yet)>")
+            _ => String::from("<hpo3.Ontology (no data loaded, yet)>"),
         }
     }
 
