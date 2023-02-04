@@ -2,17 +2,15 @@ use std::collections::VecDeque;
 
 use pyo3::exceptions::{PyIndexError, PyRuntimeError};
 use pyo3::prelude::*;
+use pyo3::PyResult;
+
+use hpo::annotations::AnnotationId;
 
 use crate::annotations::PyOmimDisease;
 use crate::{from_binary, from_obo, get_ontology, pyterm_from_id, term_from_query, PyQuery};
 
-use pyo3::PyResult;
-
-use crate::PyHpoTerm;
-
-use crate::ONTOLOGY;
-
 use crate::PyGene;
+use crate::PyHpoTerm;
 
 #[pyclass(module = "hpo3", name = "Ontology")]
 pub struct PyOntology {}
@@ -227,12 +225,7 @@ impl PyOntology {
     ///     len(ont)  # ==> 17059
     ///
     fn __len__(&self) -> PyResult<usize> {
-        Ok(ONTOLOGY
-            .get()
-            .ok_or_else(|| {
-                pyo3::exceptions::PyAttributeError::new_err("The ontology is not yet initialized")
-            })?
-            .len())
+        Ok(get_ontology()?.len())
     }
 
     fn __repr__(&self) -> String {

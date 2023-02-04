@@ -1,14 +1,15 @@
 use std::collections::HashSet;
 use std::num::ParseIntError;
 
-use hpo::Ontology;
 use rayon::prelude::*;
 
-use hpo::similarity::{GroupSimilarity, StandardCombiner};
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::types::PyDict;
 use pyo3::{prelude::*, types::PyType};
 
+use hpo::annotations::AnnotationId;
+use hpo::similarity::{GroupSimilarity, StandardCombiner};
+use hpo::Ontology;
 use hpo::{term::HpoGroup, HpoSet, HpoTermId};
 
 use crate::{

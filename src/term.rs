@@ -5,6 +5,7 @@ use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
+use hpo::annotations::AnnotationId;
 use hpo::similarity::Similarity;
 use hpo::term::HpoTermId;
 

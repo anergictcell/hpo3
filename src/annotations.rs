@@ -1,3 +1,4 @@
+use hpo::annotations::AnnotationId;
 use pyo3::{prelude::*, types::PyType};
 use std::collections::HashSet;
 
@@ -5,6 +6,8 @@ use hpo::annotations::{GeneId, OmimDiseaseId};
 use std::hash::Hash;
 
 use crate::{get_ontology, set::PyHpoSet};
+
+pub trait PythonAnnotation {}
 
 #[pyclass(name = "Gene")]
 pub(crate) struct PyGene {
@@ -17,6 +20,8 @@ impl PyGene {
         Self { id, name }
     }
 }
+
+impl PythonAnnotation for PyGene {}
 
 #[pymethods]
 impl PyGene {
@@ -131,6 +136,8 @@ impl PyOmimDisease {
         Self { id, name }
     }
 }
+
+impl PythonAnnotation for PyOmimDisease {}
 
 #[pymethods]
 impl PyOmimDisease {

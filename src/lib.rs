@@ -4,18 +4,23 @@ use rayon::prelude::*;
 
 use pyo3::exceptions::{PyKeyError, PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 
-use hpo::{HpoTerm, Ontology as ActualOntology};
+use hpo::annotations::{AnnotationId, GeneId, OmimDiseaseId};
 use hpo::similarity::{GroupSimilarity, StandardCombiner};
+use hpo::stats::hypergeom::{disease_enrichment, gene_enrichment};
 use hpo::term::HpoTermId;
+use hpo::{HpoTerm, Ontology as ActualOntology};
 
 mod annotations;
+mod enrichment;
 mod information_content;
 mod ontology;
 mod set;
 mod term;
 
 use crate::annotations::{PyGene, PyOmimDisease};
+use crate::enrichment::PyEnrichmentModel;
 use crate::information_content::{PyInformationContent, PyInformationContentKind};
 use crate::ontology::PyOntology;
 use crate::set::PyHpoSet;
@@ -106,13 +111,23 @@ fn hpo3(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyHpoSet>()?;
     m.add_class::<PyHpoTerm>()?;
     m.add("Ontology", ont)?;
-    register_child_module(py, m)?;
+    register_helper_module(py, m)?;
+    register_stats_module(py, m)?;
     Ok(())
 }
 
-fn register_child_module(py: Python<'_>, parent_module: &PyModule) -> PyResult<()> {
+fn register_helper_module(py: Python<'_>, parent_module: &PyModule) -> PyResult<()> {
     let child_module = PyModule::new(py, "helper")?;
     child_module.add_function(wrap_pyfunction!(set_batch_similarity, child_module)?)?;
+    child_module.add_function(wrap_pyfunction!(batch_gene_enrichment, child_module)?)?;
+    child_module.add_function(wrap_pyfunction!(batch_disease_enrichment, child_module)?)?;
+    parent_module.add_submodule(child_module)?;
+    Ok(())
+}
+
+fn register_stats_module(py: Python<'_>, parent_module: &PyModule) -> PyResult<()> {
+    let child_module = PyModule::new(py, "stats")?;
+    child_module.add_class::<PyEnrichmentModel>()?;
     parent_module.add_submodule(child_module)?;
     Ok(())
 }
@@ -162,4 +177,48 @@ fn set_batch_similarity(
             g_sim.calculate(&set_a, &set_b)
         })
         .collect())
+}
+
+#[pyfunction]
+fn batch_gene_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<Vec<&PyDict>>> {
+    let ont = get_ontology()?;
+    let enrichments = hposets
+        .par_iter()
+        .map(|pyset| {
+            let mut enrichment = gene_enrichment(ont, &pyset.set(ont));
+            enrichment.sort_by(|a, b| a.pvalue().partial_cmp(&b.pvalue()).unwrap());
+            enrichment
+        })
+        .collect::<Vec<Vec<hpo::stats::Enrichment<GeneId>>>>();
+
+    enrichments
+        .iter()
+        .map(|set| {
+            set.iter()
+                .map(|enrichment| crate::enrichment::enrichment_dict(py, enrichment))
+                .collect::<PyResult<Vec<&PyDict>>>()
+        })
+        .collect::<PyResult<Vec<Vec<&PyDict>>>>()
+}
+
+#[pyfunction]
+fn batch_disease_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<Vec<&PyDict>>> {
+    let ont = get_ontology()?;
+    let enrichments = hposets
+        .par_iter()
+        .map(|pyset| {
+            let mut enrichment = disease_enrichment(ont, &pyset.set(ont));
+            enrichment.sort_by(|a, b| a.pvalue().partial_cmp(&b.pvalue()).unwrap());
+            enrichment
+        })
+        .collect::<Vec<Vec<hpo::stats::Enrichment<OmimDiseaseId>>>>();
+
+    enrichments
+        .iter()
+        .map(|set| {
+            set.iter()
+                .map(|enrichment| crate::enrichment::enrichment_dict(py, enrichment))
+                .collect::<PyResult<Vec<&PyDict>>>()
+        })
+        .collect::<PyResult<Vec<Vec<&PyDict>>>>()
 }
