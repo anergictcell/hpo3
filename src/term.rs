@@ -256,7 +256,7 @@ impl PyHpoTerm {
     #[pyo3(text_signature = "($self, other)")]
     fn common_ancestors(&self, other: &PyHpoTerm) -> HashSet<PyHpoTerm> {
         self.hpo()
-            .common_ancestors(&other.hpo())
+            .common_ancestors(&other.hpo()).iter()
             .fold(HashSet::new(), |mut set, term| {
                 set.insert(PyHpoTerm::from(term));
                 set

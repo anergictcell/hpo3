@@ -57,7 +57,7 @@ impl PyHpoSet {
     fn new(terms: Vec<u32>) -> Self {
         let mut ids = HpoGroup::new();
         for id in terms {
-            ids.insert(id.into());
+            ids.insert(id);
         }
         Self { ids }
     }
@@ -77,7 +77,8 @@ impl PyHpoSet {
     fn replace_obsolete(&self) -> PyResult<Self> {
         let ont = get_ontology()?;
         let mut new_set = HpoSet::new(ont, self.ids.clone());
-        new_set.replace_obsolete(ont);
+        new_set.replace_obsolete();
+        new_set.remove_obsolete();
         Ok(new_set.into())
     }
 
@@ -161,7 +162,7 @@ impl PyHpoSet {
     ///     ont = Ontology()
     ///     gene_sets = [g.hpo_set() for g in Ontology.genes]
     ///     gene_sets[0].similarity(gene_sets[1])
-    ///     0.29546087980270386
+    ///     # >> 0.29546087980270386
     ///
     #[pyo3(signature = (other, kind = "omim", method = "graphic", combine = "funSimAvg"))]
     #[pyo3(text_signature = "($self, other, kind, method, combine)")]
@@ -188,9 +189,10 @@ impl PyHpoSet {
         Ok(g_sim.calculate(&set_a, &set_b))
     }
 
-    /// Calculate similarity between this `HPOSet` and a list of other `HPOSet`s
+    /// Calculate similarity between this `HPOSet` and a list of other `HPOSet`
     ///
     /// This method runs parallelized on all avaible CPU
+    ///
     /// Examples
     /// --------
     ///
@@ -201,7 +203,7 @@ impl PyHpoSet {
     ///     gene_sets = [g.hpo_set() for g in Ontology.genes]
     ///     similarities = gene_sets[0].batch_similarity(gene_sets)
     ///     similarities[0:4]
-    ///     [1.0, 0.5000048279762268, 0.29546087980270386, 0.5000059008598328]
+    ///     # >> [1.0, 0.5000048279762268, 0.29546087980270386, 0.5000059008598328]
     ///
     #[pyo3(signature =(other, kind = "omim", method = "graphic", combine = "funSimAvg"))]
     #[pyo3(text_signature = "($self, other, kind, method, combine)")]

@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use hpo::annotations::{GeneId, OmimDiseaseId};
 use std::hash::Hash;
 
-use crate::{get_ontology, set::PyHpoSet};
+use crate::{get_ontology, set::PyHpoSet, PyQuery};
 
 pub trait PythonAnnotation {}
 
@@ -79,11 +79,16 @@ impl PyGene {
     }
 
     #[classmethod]
-    fn get(_cls: &PyType, symbol: &str) -> PyResult<Option<PyGene>> {
+    fn get(_cls: &PyType, query: PyQuery) -> PyResult<Option<PyGene>> {
         let ont = get_ontology()?;
-        Ok(ont
-            .gene_by_name(symbol)
-            .map(|g| PyGene::new(*g.id(), g.name().into())))
+        match query {
+            PyQuery::Str(symbol) => Ok(ont
+                .gene_by_name(&symbol)
+                .map(|g| PyGene::new(*g.id(), g.name().into()))),
+            PyQuery::Id(gene_id) => Ok(ont
+                .gene(&gene_id.into())
+                .map(|g| PyGene::new(*g.id(), g.name().into()))),
+        }
     }
 
     fn __str__(&self) -> String {

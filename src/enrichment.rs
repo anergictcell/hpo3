@@ -13,6 +13,28 @@ enum EnrichmentType {
     Omim,
 }
 
+/// Returns a new `EnrichmentModel` to calculate enrichment
+/// for either Genes or Omim Diseases
+///
+/// Parameters
+/// ----------
+/// category: str
+///     Specify `gene` or `omim` to determine which enrichments to calculate
+///
+/// Examples
+/// --------
+///
+/// .. code-block:: python
+///
+///     from hpo3 import Ontology, Gene, Omim
+///     from hpo3 import stats
+///
+///     ont = Ontology()
+///     model = stats.EnrichmentModel("omim")
+///
+///     # use the `model.enrichment` method to calculate
+///     # the enrichment of Omim Diseases within an HPOSet
+///
 #[pyclass(name = "EnrichmentModel")]
 #[derive(Clone)]
 pub(crate) struct PyEnrichmentModel {
@@ -31,6 +53,37 @@ impl PyEnrichmentModel {
         Ok(PyEnrichmentModel { kind })
     }
 
+    /// Calculate the enrichment for all genes or diseeases in the `HPOSet`
+    ///
+    /// Parameters
+    /// ----------
+    /// method: str
+    ///     Currently, only `hypergeom` is implemented
+    /// hposet: :class:`hpo3.HPOSet`
+    ///     The set of HPOTerms to use as sampleset for calculation of
+    ///     enrichment. The full ontology is used as background set.
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from hpo3 import Ontology, Gene, Omim
+    ///     from hpo3 import stats
+    ///
+    ///     ont = Ontology()
+    ///     model = stats.EnrichmentModel("omim")
+    ///
+    ///     # you can crate a custom HPOset or use a Gene or Disease
+    ///     term_set = Gene.get("GBA1").hpo_set()
+    ///
+    ///     enriched_diseases = model.enrichment("hypergeom", term_set)
+    ///
+    ///     # currently, the result only contains the ID, so you must
+    ///     # get the actual disease from `OmimDisease`
+    ///     top_disease = Omim.get(enriched_diseases[0]["item"])
+    ///
+    #[pyo3(text_signature = "($self, method, hposet)")]
     fn enrichment<'a>(
         &self,
         py: Python<'a>,
@@ -80,7 +133,6 @@ where
     dict.set_item("enrichment", enrichment.pvalue())?;
     dict.set_item("fold", enrichment.enrichment())?;
     dict.set_item("count", enrichment.count())?;
-    dict.set_item("item_name", enrichment.id().to_string())?;
     dict.set_item("item", enrichment.id().as_u32())?;
     Ok(dict)
 }

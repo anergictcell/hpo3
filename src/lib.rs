@@ -62,7 +62,7 @@ fn pyterm_from_id(id: u32) -> PyResult<PyHpoTerm> {
 /// Returns an [`HpoTerm`] from a `u32` ID
 fn term_from_id(id: u32) -> PyResult<hpo::HpoTerm<'static>> {
     let ont = get_ontology()?;
-    match ont.hpo(id.into()) {
+    match ont.hpo(id) {
         Some(term) => Ok(term),
         None => Err(PyKeyError::new_err(format!("No HPOTerm for index {}", id))),
     }
@@ -102,7 +102,7 @@ pub enum PyQuery {
 /// Python bindings for the Rust hpo crate
 ///
 /// This library aims to be a drop-in replacement for
-/// [`pyhpo`](https://pypi.org/project/pyhpo/)
+/// `pyhpo <https://pypi.org/project/pyhpo/>`_
 #[pymodule]
 fn hpo3(py: Python, m: &PyModule) -> PyResult<()> {
     let ont = PyOntology::blank();
