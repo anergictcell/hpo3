@@ -1,6 +1,6 @@
 EnrichmentModel
 ===============
 
-.. autoclass:: hpo3.stats.EnrichmentModel
+.. autoclass:: pyhpo.stats.EnrichmentModel
    :members:
    :inherited-members:

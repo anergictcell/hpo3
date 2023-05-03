@@ -1,6 +1,6 @@
 HPOTerm
 =======
 
-.. autoclass:: hpo3.HPOTerm
+.. autoclass:: pyhpo.HPOTerm
    :members:
    :inherited-members:

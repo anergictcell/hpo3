@@ -45,7 +45,7 @@ impl From<HpoSet<'_>> for PyHpoSet {
 ///
 /// .. code-block: python
 ///
-///     from hpo3 import Ontology, HPOSet
+///     from pyhpo import Ontology, HPOSet
 ///     ont = Ontology()
 ///     s = HPOSet([1, 118])
 ///     len(s)  
@@ -158,7 +158,7 @@ impl PyHpoSet {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology
+    ///     from pyhpo import Ontology
     ///     ont = Ontology()
     ///     gene_sets = [g.hpo_set() for g in Ontology.genes]
     ///     gene_sets[0].similarity(gene_sets[1])
@@ -198,7 +198,7 @@ impl PyHpoSet {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology
+    ///     from pyhpo import Ontology
     ///     ont = Ontology()
     ///     gene_sets = [g.hpo_set() for g in Ontology.genes]
     ///     similarities = gene_sets[0].batch_similarity(gene_sets)
@@ -335,5 +335,53 @@ impl TryFrom<&PyOmimDisease> for PyHpoSet {
             .expect("ontology must. be present and gene must be included")
             .to_hpo_set(ont)
             .into())
+    }
+}
+
+#[pyclass(name = "BasicHPOSet")]
+#[derive(Clone, Default, Debug)]
+pub(crate) struct BasicPyHpoSet;
+
+impl BasicPyHpoSet {
+    fn build<I: IntoIterator<Item = HpoTermId>>(ids: I) -> PyHpoSet {
+        let ont = get_ontology().expect("Ontology must be initialized");
+        let mut group = HpoGroup::new();
+        for id in ids {
+            group.insert(id);
+        }
+        let mut set = HpoSet::new(ont, group);
+        let mut set = set.child_nodes();
+        set.replace_obsolete();
+        set.remove_obsolete();
+        set.remove_modifier();
+        PyHpoSet::new(set.iter().map(|term| term.id().as_u32()).collect())
+    }
+}
+
+#[pymethods]
+impl BasicPyHpoSet {
+    fn __call__(&self, terms: Vec<u32>) -> PyHpoSet {
+        BasicPyHpoSet::build(terms.iter().map(|id| HpoTermId::from_u32(*id)))
+    }
+
+    #[classmethod]
+    fn from_queries(_cls: &PyType, queries: Vec<PyQuery>) -> PyResult<PyHpoSet> {
+        let mut ids: Vec<HpoTermId> = Vec::with_capacity(queries.len());
+        for q in queries {
+            ids.push(term_from_query(q)?.id());
+        }
+        Ok(BasicPyHpoSet::build(ids))
+    }
+
+    #[classmethod]
+    fn from_serialized(_cls: &PyType, pickle: &str) -> PyResult<PyHpoSet> {
+        Ok(BasicPyHpoSet::build(
+            pickle
+                .split('+')
+                .map(|id| id.parse::<u32>())
+                .collect::<Result<Vec<u32>, ParseIntError>>()?
+                .iter()
+                .map(|id| HpoTermId::from_u32(*id)),
+        ))
     }
 }

@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use pyo3::exceptions::{PyIndexError, PyRuntimeError};
+use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 use pyo3::PyResult;
 
@@ -12,7 +12,7 @@ use crate::{from_binary, from_obo, get_ontology, pyterm_from_id, term_from_query
 use crate::PyGene;
 use crate::PyHpoTerm;
 
-#[pyclass(module = "hpo3", name = "Ontology")]
+#[pyclass(name = "Ontology")]
 pub struct PyOntology {}
 
 impl PyOntology {
@@ -27,8 +27,8 @@ impl PyOntology {
     ///
     /// Returns
     /// -------
-    /// list[:class:`hpo3.Gene`]
-    ///     All genes that are associated to the :class:`hpo.HPOTerm` in the ontology
+    /// list[:class:`pyhpo.Gene`]
+    ///     All genes that are associated to the :class:`pyhpo.HPOTerm` in the ontology
     ///
     #[getter(genes)]
     fn genes(&self) -> PyResult<Vec<PyGene>> {
@@ -45,8 +45,8 @@ impl PyOntology {
     ///
     /// Returns
     /// -------
-    /// list[:class:`hpo3.Omim`]
-    ///     All Omim diseases that are associated to the :class:`hpo.HPOTerm` in the ontology
+    /// list[:class:`pyhpo.Omim`]
+    ///     All Omim diseases that are associated to the :class:`pyhpo.HPOTerm` in the ontology
     ///
     #[getter(omim_diseases)]
     fn omim_diseases(&self) -> PyResult<Vec<PyOmimDisease>> {
@@ -63,7 +63,7 @@ impl PyOntology {
     ///
     /// Parameters
     /// ----------
-    /// query: str or int
+    /// query: `str` or `int`
     ///
     ///     * **str** HPO term ``Scoliosis``
     ///     * **str** synonym ``Curved spine``
@@ -72,17 +72,17 @@ impl PyOntology {
     ///
     /// Returns
     /// -------
-    /// :class:`hpo.HPOTerm`
+    /// :class:`pyhpo.HPOTerm`
     ///     A single matching HPO term instance
     ///
     /// Raises
     /// ------
-    /// RuntimeError
+    /// `RuntimeError`
     ///     No HPO term is found for the provided query
-    /// TypeError
+    /// `TypeError`
     ///     The provided query is an unsupported type and can't be properly
     ///     converted
-    /// ValueError
+    /// `ValueError`
     ///     The provided HPO ID cannot be converted to the correct
     ///     integer representation
     ///
@@ -111,6 +111,22 @@ impl PyOntology {
         Ok(PyHpoTerm::from(term_from_query(query)?))
     }
 
+    /// Returns a single `HPOTerm` based on its name
+    ///
+    /// Parameters
+    /// ----------
+    /// query: `str`
+    ///     Name of the HPO term, e.g. ``Scoliosis``
+    ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.HPOTerm`
+    ///     A single matching HPO term instance
+    ///
+    /// Raises
+    /// ------
+    /// `RuntimeError`
+    ///     No HPO term is found for the provided query
     #[pyo3(text_signature = "($self, query)")]
     fn r#match(&self, query: &str) -> PyResult<PyHpoTerm> {
         let ont = get_ontology()?;
@@ -123,25 +139,41 @@ impl PyOntology {
         Err(PyRuntimeError::new_err("No HPO entry found"))
     }
 
-    /// Calculates the shortest path from one to another HPO Term
+    /// Returns the shortest path from one to another HPO Term
     ///
-    /// IMPORTANT NOTE
-    /// --------------
-    /// This method is not correctly implemented and will only return
-    /// the distance, but not the actual path. It will instead return
-    /// an empty list
+    /// Parameters
+    /// ----------
+    /// query1: `str` or `int`
+    ///     HPO term 1, synonym or HPO-ID (HP:00001) to match
+    ///     HPO term id (Integer based)
+    ///     e.g: ``Abnormality of the nervous system``
+    /// query2: `str` or `int`
+    ///     HPO term 2, synonym or HPO-ID (HP:00001) to match
+    ///     HPO term id (Integer based)
+    ///     e.g: ``Abnormality of the nervous system``
+    ///
+    /// Returns
+    /// -------
+    /// int
+    ///     Length of path
+    /// tuple
+    ///     Tuple of HPOTerms in the path
+    /// int
+    ///     Number of steps from term-1 to the common parent
+    ///     **(Not yet implemented. Returns ``0``)**
+    /// int
+    ///     Number of steps from term-2 to the common parent
+    ///     **(Not yet implemented. Returns ``0``)**
+    ///
     #[pyo3(text_signature = "($self, query1, query2)")]
     fn path(
         &self,
         query1: PyQuery,
         query2: PyQuery,
     ) -> PyResult<(usize, Vec<PyHpoTerm>, usize, usize)> {
-        let t1 = term_from_query(query1)?;
-        let t2 = term_from_query(query2)?;
-        let dist = t1
-            .distance_to_term(&t2)
-            .ok_or_else(|| PyIndexError::new_err("no path between the two terms"))?;
-        Ok((dist, vec![], 0, 0))
+        let t1: PyHpoTerm = term_from_query(query1)?.into();
+        let t2: PyHpoTerm = term_from_query(query2)?.into();
+        t1.path_to_other(&t2)
     }
 
     /// TODO: Return an actual iterator instead
@@ -167,7 +199,7 @@ impl PyOntology {
     ///
     /// Returns
     /// -------
-    /// :class:`hpo3.HpoTerm`
+    /// :class:`pyhpo.HPOTerm`
     ///     The HPO-Term
     ///
     /// Examples
@@ -175,7 +207,7 @@ impl PyOntology {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology
+    ///     from pyhpo import Ontology
     ///     
     ///     ont = Ontology()
     ///     
@@ -220,7 +252,7 @@ impl PyOntology {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology
+    ///     from pyhpo import Ontology
     ///     ont = Ontology()
     ///     len(ont)  # ==> 17059
     ///
@@ -230,8 +262,8 @@ impl PyOntology {
 
     fn __repr__(&self) -> String {
         match get_ontology() {
-            Ok(ont) => format!("<hpo3.Ontology with {} terms>", ont.len()),
-            _ => String::from("<hpo3.Ontology (no data loaded, yet)>"),
+            Ok(ont) => format!("<pyhpo.Ontology with {} terms>", ont.len()),
+            _ => String::from("<pyhpo.Ontology (no data loaded, yet)>"),
         }
     }
 
@@ -244,7 +276,7 @@ impl PyOntology {
     }
 }
 
-#[pyclass(module = "hpo3", name = "OntologyIterator")]
+#[pyclass(name = "OntologyIterator")]
 struct OntologyIterator {
     ids: VecDeque<u32>,
 }

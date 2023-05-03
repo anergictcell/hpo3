@@ -7,7 +7,7 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'hpo3'
-copyright = '2022, Jonas Marcello'
+copyright = '2023, Jonas Marcello'
 author = 'Jonas Marcello'
 
 # -- General configuration ---------------------------------------------------

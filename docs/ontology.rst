@@ -18,7 +18,7 @@ Examples
 
 .. code-block:: python
 
-    from hpo3 import Ontology
+    from pyhpo import Ontology
     
     ont = Ontology("path/to/ontology.hpo")
     
@@ -28,13 +28,13 @@ Examples
     int(tern)    # ==> 11968
 
 
-The following code with multiple modules works, because the Ontology mus only be loaded once:
+The following code with multiple modules works, because the Ontology must only be loaded once:
 
 **File main.py**
 
 .. code-block:: python
 
-    from hpo3 import Ontology
+    from pyhpo import Ontology
 
     import submodule
     from submodule import foo
@@ -49,7 +49,7 @@ The following code with multiple modules works, because the Ontology mus only be
 
 .. code-block:: python
 
-    from hpo3 import Ontology
+    from pyhpo import Ontology
 
     def foo():
         print(len(Ontology))
@@ -60,14 +60,14 @@ The following code with multiple modules works, because the Ontology mus only be
 
 Attributes
 ----------
-.. autoattribute:: hpo3.Ontology.__class__.genes
-.. autoattribute:: hpo3.Ontology.__class__.omim_diseases
+.. autoattribute:: pyhpo.Ontology.__class__.genes
+.. autoattribute:: pyhpo.Ontology.__class__.omim_diseases
 
 Methods
 -------
-.. autofunction:: hpo3.Ontology.__class__.__call__
-.. autofunction:: hpo3.Ontology.__class__.get_hpo_object
-.. autofunction:: hpo3.Ontology.__class__.match
-.. autofunction:: hpo3.Ontology.__class__.path
-.. autofunction:: hpo3.Ontology.__class__.search
-.. autofunction:: hpo3.Ontology.__class__.hpo
+.. autofunction:: pyhpo.Ontology.__class__.__call__
+.. autofunction:: pyhpo.Ontology.__class__.get_hpo_object
+.. autofunction:: pyhpo.Ontology.__class__.match
+.. autofunction:: pyhpo.Ontology.__class__.path
+.. autofunction:: pyhpo.Ontology.__class__.search
+.. autofunction:: pyhpo.Ontology.__class__.hpo

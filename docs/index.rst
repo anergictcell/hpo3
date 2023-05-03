@@ -6,7 +6,7 @@
 Welcome to hpo3's documentation!
 ================================
 
-.. currentmodule:: hpo3
+.. currentmodule:: pyhpo
 
 .. toctree::
    :maxdepth: 1
@@ -37,7 +37,7 @@ Examples
 
 .. code-block:: python
 
-   from hpo3 import stats, Ontology, HPOSet, Gene
+   from pyhpo import stats, Ontology, HPOSet, Gene
 
    # initilize the Ontology
    _ = Ontology()
@@ -121,7 +121,7 @@ Examples
 .. code-block:: python
 
    import itertools
-   from hpo3 import Ontology, HPOSet, helper
+   from pyhpo import Ontology, HPOSet, helper
 
    Ontology()
 
@@ -143,7 +143,7 @@ Examples
 .. code-block:: python
 
    import itertools
-   from hpo3 import Ontology, HPOSet, helper
+   from pyhpo import Ontology, HPOSet, helper
 
    Ontology()
 
@@ -177,7 +177,7 @@ Examples
 .. code-block:: python
 
    import itertools
-   from hpo3 import Ontology, HPOSet, helper
+   from pyhpo import Ontology, HPOSet, helper
 
    Ontology()
 
@@ -194,7 +194,7 @@ Examples
 .. code-block:: python
 
    import itertools
-   from hpo3 import Ontology, HPOSet, helper
+   from pyhpo import Ontology, HPOSet, helper
 
    Ontology()
 

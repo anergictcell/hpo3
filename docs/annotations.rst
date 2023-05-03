@@ -1,10 +1,10 @@
 Annotations
 ===========
 
-.. autoclass:: Omim
+.. autoclass:: pyhpo.Omim
    :members:
    :inherited-members:
 
-.. autoclass:: Gene
+.. autoclass:: pyhpo.Gene
    :members:
    :inherited-members:

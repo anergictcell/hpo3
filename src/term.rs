@@ -19,6 +19,7 @@ use crate::PyInformationContentKind;
 use crate::PyOmimDisease;
 
 #[pyclass(name = "HPOTerm")]
+#[derive(Clone)]
 pub struct PyHpoTerm {
     id: HpoTermId,
     name: String,
@@ -72,7 +73,7 @@ impl PyHpoTerm {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology
+    ///     from pyhpo import Ontology
     ///     ont = Ontology()
     ///     term = ont.hpo(11968)
     ///     term.id()    # ==> 'HP:0011968'
@@ -89,7 +90,7 @@ impl PyHpoTerm {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology
+    ///     from pyhpo import Ontology
     ///     ont = Ontology()
     ///     term = ont.hpo(11968)
     ///     term.name()  # ==> 'Feeding difficulties'
@@ -106,7 +107,7 @@ impl PyHpoTerm {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology
+    ///     from pyhpo import Ontology
     ///     ont = Ontology()
     ///     term = ont.hpo(11968)
     ///     term.information_content.omim  # ==> 2.5363943576812744
@@ -124,7 +125,7 @@ impl PyHpoTerm {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology
+    ///     from pyhpo import Ontology
     ///     ont = Ontology()
     ///     term = ont.hpo(108)
     ///     term.parents  # ==> {<HpoTerm (HP:0011035)>, <HpoTerm (HP:0000107)>, <HpoTerm (HP:0100957)>}
@@ -147,7 +148,7 @@ impl PyHpoTerm {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology
+    ///     from pyhpo import Ontology
     ///     ont = Ontology()
     ///     term = ont.hpo(108)
     ///     term.all_parents  # ==> {large set}
@@ -172,7 +173,7 @@ impl PyHpoTerm {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology
+    ///     from pyhpo import Ontology
     ///     ont = Ontology()
     ///     term = ont.hpo(1)
     ///     term.children  # ==> {<HpoTerm (HP:0000005)>, <HpoTerm (HP:0000118)>, <HpoTerm (HP:0012823)>, <HpoTerm (HP:0032443)>, <HpoTerm (HP:0040279)>, <HpoTerm (HP:0032223)>}
@@ -198,7 +199,7 @@ impl PyHpoTerm {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology
+    ///     from pyhpo import Ontology
     ///     ont = Ontology()
     ///     term = ont.hpo(188)
     ///     for gene in term.genes:
@@ -222,7 +223,7 @@ impl PyHpoTerm {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology
+    ///     from pyhpo import Ontology
     ///     ont = Ontology()
     ///     term = ont.hpo(188)
     ///     for disease in term.diseases:
@@ -256,7 +257,8 @@ impl PyHpoTerm {
     #[pyo3(text_signature = "($self, other)")]
     fn common_ancestors(&self, other: &PyHpoTerm) -> HashSet<PyHpoTerm> {
         self.hpo()
-            .common_ancestors(&other.hpo()).iter()
+            .common_ancestors(&other.hpo())
+            .iter()
             .fold(HashSet::new(), |mut set, term| {
                 set.insert(PyHpoTerm::from(term));
                 set
@@ -304,15 +306,25 @@ impl PyHpoTerm {
     ///
     /// IMPORTANT NOTE
     /// --------------
-    /// This method is not correctly implemented and will only return
-    /// the distance, but not the actual path. It will instead return
-    /// an empty list
-    ///
-    /// TODO: Double check if error handling might be required for e.g. obsolete terms
+    /// This method is not correctly implemented and will not return
+    /// the sub-paths distances
     #[pyo3(text_signature = "($self, other)")]
-    fn path_to_other(&self, other: &PyHpoTerm) -> (usize, Vec<PyHpoTerm>, usize, usize) {
-        let dist = self.hpo().distance_to_term(&other.into()).unwrap();
-        (dist, vec![], 0, 0)
+    pub fn path_to_other(
+        &self,
+        other: &PyHpoTerm,
+    ) -> PyResult<(usize, Vec<PyHpoTerm>, usize, usize)> {
+        let path = self
+            .hpo()
+            .path_to_term(&other.into())
+            .ok_or_else(|| PyRuntimeError::new_err("No path found"))?;
+        Ok((
+            path.len(),
+            path.iter()
+                .map(|id| pyterm_from_id(id.as_u32()).expect("term must be part of Ontology"))
+                .collect(),
+            0,
+            0,
+        ))
     }
 
     /// Calculates the similarity score of two HPO Terms
@@ -357,7 +369,7 @@ impl PyHpoTerm {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology
+    ///     from pyhpo import Ontology
     ///
     ///     ont = Ontology()
     ///     term = ont.hpo(11968)

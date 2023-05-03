@@ -1,6 +1,6 @@
 HPOSet
 ======
 
-.. autoclass:: hpo3.HPOSet
+.. autoclass:: pyhpo.HPOSet
    :members:
    :inherited-members:

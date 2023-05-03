@@ -26,8 +26,8 @@ enum EnrichmentType {
 ///
 /// .. code-block:: python
 ///
-///     from hpo3 import Ontology, Gene, Omim
-///     from hpo3 import stats
+///     from pyhpo import Ontology, Gene, Omim
+///     from pyhpo import stats
 ///
 ///     ont = Ontology()
 ///     model = stats.EnrichmentModel("omim")
@@ -59,7 +59,7 @@ impl PyEnrichmentModel {
     /// ----------
     /// method: str
     ///     Currently, only `hypergeom` is implemented
-    /// hposet: :class:`hpo3.HPOSet`
+    /// hposet: :class:`pyhpo.HPOSet`
     ///     The set of HPOTerms to use as sampleset for calculation of
     ///     enrichment. The full ontology is used as background set.
     ///
@@ -68,8 +68,8 @@ impl PyEnrichmentModel {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology, Gene, Omim
-    ///     from hpo3 import stats
+    ///     from pyhpo import Ontology, Gene, Omim
+    ///     from pyhpo import stats
     ///
     ///     ont = Ontology()
     ///     model = stats.EnrichmentModel("omim")

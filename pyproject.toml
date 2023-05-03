@@ -23,3 +23,8 @@ classifiers = [
 ]
 license = {text = "MIT"}
 authors = [{name = "Jonas Marcello", email = "jonas.marcello@esbme.com"}]
+
+[project.urls]
+homepage = "https://github.com/anergictcell/hpo3"
+repository = "https://github.com/anergictcell/hpo3"
+"Bug Tracker" = "https://github.com/anergictcell/hpo3/issues"

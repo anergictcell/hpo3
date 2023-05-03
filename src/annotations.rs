@@ -32,7 +32,7 @@ impl PyGene {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology
+    ///     from pyhpo import Ontology
     ///     ont = Ontology()
     ///     gene = ont.genes()[0]
     ///     gene.id()    # ==> 11212
@@ -49,7 +49,7 @@ impl PyGene {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology
+    ///     from pyhpo import Ontology
     ///     ont = Ontology()
     ///     gene = ont.genes()[0]
     ///     gene.name()
@@ -65,7 +65,7 @@ impl PyGene {
         let ont = get_ontology()?;
         Ok(ont
             .gene(&self.id)
-            .expect("ontology must. be present and gene must be included")
+            .expect("ontology must be present and gene must be included")
             .hpo_terms()
             .iter()
             .fold(HashSet::new(), |mut set, tid| {
@@ -153,7 +153,7 @@ impl PyOmimDisease {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology
+    ///     from pyhpo import Ontology
     ///     ont = Ontology()
     ///     gene = ont.omim_diseases()[0]
     ///     gene.id    # ==> 41232
@@ -170,7 +170,7 @@ impl PyOmimDisease {
     ///
     /// .. code-block:: python
     ///
-    ///     from hpo3 import Ontology
+    ///     from pyhpo import Ontology
     ///     ont = Ontology()
     ///     gene = ont.omim_diseases()[0]
     ///     gene.name  # ==> 'Gaucher'
