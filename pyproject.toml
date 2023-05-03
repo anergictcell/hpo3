@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "hpo3"
-version = "0.2.0"
+version = "0.2.1"
 description = "A drop-in replacement for PyHPO using a Rust backend for faster performance"
 readme = "README.md"
 requires-python = ">=3.7"

@@ -12,12 +12,13 @@ use hpo::similarity::{GroupSimilarity, StandardCombiner};
 use hpo::Ontology;
 use hpo::{term::HpoGroup, HpoSet, HpoTermId};
 
+use crate::term::PyHpoTerm;
 use crate::{
     annotations::{PyGene, PyOmimDisease},
     get_ontology,
     information_content::PyInformationContentKind,
 };
-use crate::{term_from_query, PyQuery};
+use crate::{pyterm_from_id, term_from_query, PyQuery};
 
 #[pyclass(name = "HPOSet")]
 #[derive(Clone)]
@@ -251,6 +252,22 @@ impl PyHpoSet {
         id_strings.join("+")
     }
 
+    /// Returns the HPOTerms in the set
+    ///
+    /// TODO: Convert this to an iterator
+    fn terms(&self) -> PyResult<Vec<PyHpoTerm>> {
+        let terms: Vec<PyHpoTerm> = self
+            .ids
+            .iter()
+            .filter_map(|id| pyterm_from_id(id.as_u32()).ok())
+            .collect();
+        if terms.len() == self.ids.len() {
+            Ok(terms)
+        } else {
+            Err(PyRuntimeError::new_err("Some terms are not correct"))
+        }
+    }
+
     #[classmethod]
     fn from_queries(_cls: &PyType, queries: Vec<PyQuery>) -> PyResult<Self> {
         let mut ids: Vec<HpoTermId> = Vec::with_capacity(queries.len());
@@ -298,12 +315,18 @@ impl PyHpoSet {
 
     fn __str__(&self) -> String {
         format!(
-            "HPOSet: {}",
-            self.ids
-                .iter()
-                .map(|id| id.to_string())
-                .collect::<Vec<String>>()
-                .join(",")
+            "HPOSet: [{}]",
+            if self.ids.len() <= 10 {
+                self.ids
+                    .iter()
+                    .map(|id| id.to_string())
+                    .collect::<Vec<String>>()
+                    .join(",")
+            } else if self.ids.is_empty() {
+                "-".to_string()
+            } else {
+                format!("{} terms", self.ids.len())
+            }
         )
     }
 }
