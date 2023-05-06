@@ -47,7 +47,7 @@ impl From<HpoSet<'_>> for PyHpoSet {
 /// .. code-block: python
 ///
 ///     from pyhpo import Ontology, HPOSet
-///     ont = Ontology()
+///     Ontology()
 ///     s = HPOSet([1, 118])
 ///     len(s)  
 ///     # >> 2
@@ -160,7 +160,7 @@ impl PyHpoSet {
     /// .. code-block:: python
     ///
     ///     from pyhpo import Ontology
-    ///     ont = Ontology()
+    ///     Ontology()
     ///     gene_sets = [g.hpo_set() for g in Ontology.genes]
     ///     gene_sets[0].similarity(gene_sets[1])
     ///     # >> 0.29546087980270386
@@ -200,7 +200,7 @@ impl PyHpoSet {
     /// .. code-block:: python
     ///
     ///     from pyhpo import Ontology
-    ///     ont = Ontology()
+    ///     Ontology()
     ///     gene_sets = [g.hpo_set() for g in Ontology.genes]
     ///     similarities = gene_sets[0].batch_similarity(gene_sets)
     ///     similarities[0:4]

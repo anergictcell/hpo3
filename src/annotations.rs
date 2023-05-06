@@ -1,9 +1,12 @@
-use hpo::annotations::AnnotationId;
-use pyo3::{prelude::*, types::PyType};
 use std::collections::HashSet;
-
-use hpo::annotations::{GeneId, OmimDiseaseId};
 use std::hash::Hash;
+
+use pyo3::class::basic::CompareOp;
+use pyo3::exceptions::PyTypeError;
+use pyo3::{prelude::*, types::PyType};
+
+use hpo::annotations::AnnotationId;
+use hpo::annotations::{GeneId, OmimDiseaseId};
 
 use crate::{get_ontology, set::PyHpoSet, PyQuery};
 
@@ -33,8 +36,8 @@ impl PyGene {
     /// .. code-block:: python
     ///
     ///     from pyhpo import Ontology
-    ///     ont = Ontology()
-    ///     gene = ont.genes()[0]
+    ///     Ontology()
+    ///     gene = Ontology.genes()[0]
     ///     gene.id()    # ==> 11212
     ///
     #[getter(id)]
@@ -50,8 +53,8 @@ impl PyGene {
     /// .. code-block:: python
     ///
     ///     from pyhpo import Ontology
-    ///     ont = Ontology()
-    ///     gene = ont.genes()[0]
+    ///     Ontology()
+    ///     gene = Ontology.genes()[0]
     ///     gene.name()
     ///     # >> 'BRCA2'
     ///
@@ -106,6 +109,25 @@ impl PyGene {
     fn __hash__(&self) -> u32 {
         self.__int__()
     }
+
+    fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
+        match op {
+            CompareOp::Lt => Err(PyTypeError::new_err(
+                "\"<\" is not supported for Gene instances",
+            )),
+            CompareOp::Le => Err(PyTypeError::new_err(
+                "\"<=\" is not supported for Gene instances",
+            )),
+            CompareOp::Eq => Ok(self == other),
+            CompareOp::Ne => Ok(self != other),
+            CompareOp::Gt => Err(PyTypeError::new_err(
+                "\">\" is not supported for Gene instances",
+            )),
+            CompareOp::Ge => Err(PyTypeError::new_err(
+                "\">=\" is not supported for Gene instances",
+            )),
+        }
+    }
 }
 
 impl PartialEq for PyGene {
@@ -154,8 +176,8 @@ impl PyOmimDisease {
     /// .. code-block:: python
     ///
     ///     from pyhpo import Ontology
-    ///     ont = Ontology()
-    ///     gene = ont.omim_diseases()[0]
+    ///     Ontology()
+    ///     gene = Ontology.omim_diseases()[0]
     ///     gene.id    # ==> 41232
     ///
     #[getter(id)]
@@ -171,8 +193,8 @@ impl PyOmimDisease {
     /// .. code-block:: python
     ///
     ///     from pyhpo import Ontology
-    ///     ont = Ontology()
-    ///     gene = ont.omim_diseases()[0]
+    ///     Ontology()
+    ///     gene = Ontology.omim_diseases()[0]
     ///     gene.name  # ==> 'Gaucher'
     ///
     #[getter(name)]
@@ -218,6 +240,25 @@ impl PyOmimDisease {
 
     fn __hash__(&self) -> u32 {
         self.__int__()
+    }
+
+    fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
+        match op {
+            CompareOp::Lt => Err(PyTypeError::new_err(
+                "\"<\" is not supported for Omim instances",
+            )),
+            CompareOp::Le => Err(PyTypeError::new_err(
+                "\"<=\" is not supported for Omim instances",
+            )),
+            CompareOp::Eq => Ok(self == other),
+            CompareOp::Ne => Ok(self != other),
+            CompareOp::Gt => Err(PyTypeError::new_err(
+                "\">\" is not supported for Omim instances",
+            )),
+            CompareOp::Ge => Err(PyTypeError::new_err(
+                "\">=\" is not supported for Omim instances",
+            )),
+        }
     }
 }
 

@@ -1,7 +1,9 @@
 use std::collections::HashSet;
 use std::hash::Hash;
 
+use pyo3::class::basic::CompareOp;
 use pyo3::exceptions::PyRuntimeError;
+use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
@@ -52,7 +54,7 @@ impl TryFrom<HpoTermId> for PyHpoTerm {
 
 impl PartialEq for PyHpoTerm {
     fn eq(&self, other: &Self) -> bool {
-        self.id() == other.id()
+        self.id == other.id
     }
 }
 
@@ -74,8 +76,8 @@ impl PyHpoTerm {
     /// .. code-block:: python
     ///
     ///     from pyhpo import Ontology
-    ///     ont = Ontology()
-    ///     term = ont.hpo(11968)
+    ///     Ontology()
+    ///     term = Ontology.hpo(11968)
     ///     term.id()    # ==> 'HP:0011968'
     ///
     #[getter(id)]
@@ -91,8 +93,8 @@ impl PyHpoTerm {
     /// .. code-block:: python
     ///
     ///     from pyhpo import Ontology
-    ///     ont = Ontology()
-    ///     term = ont.hpo(11968)
+    ///     Ontology()
+    ///     term = Ontology.hpo(11968)
     ///     term.name()  # ==> 'Feeding difficulties'
     ///
     #[getter(name)]
@@ -108,8 +110,8 @@ impl PyHpoTerm {
     /// .. code-block:: python
     ///
     ///     from pyhpo import Ontology
-    ///     ont = Ontology()
-    ///     term = ont.hpo(11968)
+    ///     Ontology()
+    ///     term = Ontology.hpo(11968)
     ///     term.information_content.omim  # ==> 2.5363943576812744
     ///     term.information_content.gene  # ==> 1.457185983657837
     ///
@@ -126,8 +128,8 @@ impl PyHpoTerm {
     /// .. code-block:: python
     ///
     ///     from pyhpo import Ontology
-    ///     ont = Ontology()
-    ///     term = ont.hpo(108)
+    ///     Ontology()
+    ///     term = Ontology.hpo(108)
     ///     term.parents  # ==> {<HpoTerm (HP:0011035)>, <HpoTerm (HP:0000107)>, <HpoTerm (HP:0100957)>}
     ///
     #[getter(parents)]
@@ -149,8 +151,8 @@ impl PyHpoTerm {
     /// .. code-block:: python
     ///
     ///     from pyhpo import Ontology
-    ///     ont = Ontology()
-    ///     term = ont.hpo(108)
+    ///     Ontology()
+    ///     term = Ontology.hpo(108)
     ///     term.all_parents  # ==> {large set}
     ///
     #[getter(all_parents)]
@@ -174,8 +176,8 @@ impl PyHpoTerm {
     /// .. code-block:: python
     ///
     ///     from pyhpo import Ontology
-    ///     ont = Ontology()
-    ///     term = ont.hpo(1)
+    ///     Ontology()
+    ///     term = Ontology.hpo(1)
     ///     term.children  # ==> {<HpoTerm (HP:0000005)>, <HpoTerm (HP:0000118)>, <HpoTerm (HP:0012823)>, <HpoTerm (HP:0032443)>, <HpoTerm (HP:0040279)>, <HpoTerm (HP:0032223)>}
     ///
     #[getter(children)]
@@ -200,8 +202,8 @@ impl PyHpoTerm {
     /// .. code-block:: python
     ///
     ///     from pyhpo import Ontology
-    ///     ont = Ontology()
-    ///     term = ont.hpo(188)
+    ///     Ontology()
+    ///     term = Ontology.hpo(188)
     ///     for gene in term.genes:
     ///         print(gene.name)
     ///
@@ -224,8 +226,8 @@ impl PyHpoTerm {
     /// .. code-block:: python
     ///
     ///     from pyhpo import Ontology
-    ///     ont = Ontology()
-    ///     term = ont.hpo(188)
+    ///     Ontology()
+    ///     term = Ontology.hpo(188)
     ///     for disease in term.diseases:
     ///         print(disease.name)
     ///
@@ -432,6 +434,25 @@ impl PyHpoTerm {
 
     fn __hash__(&self) -> u32 {
         self.__int__()
+    }
+
+    fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
+        match op {
+            CompareOp::Lt => Err(PyTypeError::new_err(
+                "\"<\" is not supported for HPOTerm instances",
+            )),
+            CompareOp::Le => Err(PyTypeError::new_err(
+                "\"<=\" is not supported for HPOTerm instances",
+            )),
+            CompareOp::Eq => Ok(self == other),
+            CompareOp::Ne => Ok(self != other),
+            CompareOp::Gt => Err(PyTypeError::new_err(
+                "\">\" is not supported for HPOTerm instances",
+            )),
+            CompareOp::Ge => Err(PyTypeError::new_err(
+                "\">=\" is not supported for HPOTerm instances",
+            )),
+        }
     }
 }
 

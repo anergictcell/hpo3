@@ -7,6 +7,7 @@ use pyo3::PyResult;
 use hpo::annotations::AnnotationId;
 
 use crate::annotations::PyOmimDisease;
+use crate::from_builtin;
 use crate::{from_binary, from_obo, get_ontology, pyterm_from_id, term_from_query, PyQuery};
 
 use crate::PyGene;
@@ -209,9 +210,9 @@ impl PyOntology {
     ///
     ///     from pyhpo import Ontology
     ///     
-    ///     ont = Ontology()
+    ///     Ontology()
     ///     
-    ///     term = ont.hpo(11968)
+    ///     term = Ontology.hpo(11968)
     ///     term.name()  # ==> 'Feeding difficulties'
     ///     term.id()    # ==> 'HP:0011968'
     ///     int(tern)    # ==> 11968
@@ -219,6 +220,16 @@ impl PyOntology {
     #[pyo3(text_signature = "($self, id)")]
     fn hpo(&self, id: u32) -> PyResult<PyHpoTerm> {
         pyterm_from_id(id)
+    }
+
+    /// Returns the HPO version
+    ///
+    /// Returns
+    /// -------
+    /// str
+    ///     The HPO version, e.g. ``2023-04-05``
+    fn version(&self) -> PyResult<String> {
+        Ok(get_ontology()?.hpo_version())
     }
 
     /// Constructs the ontology based on provided ontology files
@@ -231,9 +242,11 @@ impl PyOntology {
     ///     Path to the source files (default: `./ontology.hpo`)
     /// binary: bool
     ///     Whether the input format is binary (default true)
-    #[pyo3(signature = (path = "ontology.hpo", binary = true))]
+    #[pyo3(signature = (path = "", binary = true))]
     fn __call__(&self, path: &str, binary: bool) {
-        if binary {
+        if path.is_empty() {
+            from_builtin();
+        } else if binary {
             from_binary(path);
         } else {
             from_obo(path);
@@ -253,8 +266,8 @@ impl PyOntology {
     /// .. code-block:: python
     ///
     ///     from pyhpo import Ontology
-    ///     ont = Ontology()
-    ///     len(ont)  # ==> 17059
+    ///     Ontology()
+    ///     len(Ontology)  # ==> 17059
     ///
     fn __len__(&self) -> PyResult<usize> {
         Ok(get_ontology()?.len())

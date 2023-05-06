@@ -35,6 +35,13 @@ fn from_binary(path: &str) -> usize {
     ONTOLOGY.get().unwrap().len()
 }
 
+fn from_builtin() -> usize {
+    let bytes = include_bytes!("../data/ontology.hpo");
+    let ont = ActualOntology::from_bytes(&bytes[..]).expect("Unable to build Ontology");
+    ONTOLOGY.set(ont).unwrap();
+    ONTOLOGY.get().unwrap().len()
+}
+
 /// Builds the ontology from the JAX download files
 fn from_obo(path: &str) -> usize {
     let ont = ActualOntology::from_standard(path).unwrap();
@@ -48,7 +55,7 @@ fn from_obo(path: &str) -> usize {
 fn get_ontology() -> PyResult<&'static ActualOntology> {
     ONTOLOGY.get().ok_or_else(|| {
         pyo3::exceptions::PyNameError::new_err(
-            "You must build the ontology first: `ont = hpo3.Ontology()`",
+            "You must build the ontology first: `ont = pyhpo.Ontology()`",
         )
     })
 }
@@ -112,6 +119,8 @@ fn pyhpo(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyHpoTerm>()?;
     m.add("Ontology", ont)?;
     m.add("BasicHPOSet", set::BasicPyHpoSet::default())?;
+    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
+    m.add("__backend__", env!("CARGO_PKG_NAME"))?;
     register_helper_module(py, m)?;
     register_stats_module(py, m)?;
     register_set_module(py, m)?;

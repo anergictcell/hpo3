@@ -29,7 +29,7 @@ enum EnrichmentType {
 ///     from pyhpo import Ontology, Gene, Omim
 ///     from pyhpo import stats
 ///
-///     ont = Ontology()
+///     Ontology()
 ///     model = stats.EnrichmentModel("omim")
 ///
 ///     # use the `model.enrichment` method to calculate
@@ -71,7 +71,7 @@ impl PyEnrichmentModel {
     ///     from pyhpo import Ontology, Gene, Omim
     ///     from pyhpo import stats
     ///
-    ///     ont = Ontology()
+    ///     Ontology()
     ///     model = stats.EnrichmentModel("omim")
     ///
     ///     # you can crate a custom HPOset or use a Gene or Disease
