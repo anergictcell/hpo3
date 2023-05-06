@@ -11,7 +11,7 @@ Arguments
 path: str
     Path to the source files (default: `./ontology.hpo`)
 binary: bool
-    Whether the input format is binary (default true)
+    Whether the input format is binary (default `true`)
 
 Examples
 ~~~~~~~~
@@ -20,9 +20,9 @@ Examples
 
     from pyhpo import Ontology
     
-    ont = Ontology("path/to/ontology.hpo")
+    Ontology("path/to/ontology.hpo")
     
-    term = ont.hpo(11968)
+    term = Ontology.hpo(11968)
     term.name()  # ==> 'Feeding difficulties'
     term.id()    # ==> 'HP:0011968'
     int(tern)    # ==> 11968
@@ -39,7 +39,7 @@ The following code with multiple modules works, because the Ontology must only b
     import submodule
     from submodule import foo
     
-    ont = Ontology("path/to/ontology.hpo")
+    Ontology("path/to/ontology.hpo")
     
     foo()
     submodule.bar()

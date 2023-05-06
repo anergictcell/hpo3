@@ -3,15 +3,16 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to hpo3's documentation!
-================================
+:math:`HPO_3`
+=============
 
 .. currentmodule:: pyhpo
 
 .. toctree::
    :maxdepth: 1
-   :caption: API documentation:
+   :caption: Table of Contents:
 
+   getting_started
    ontology
    hpoterm
    hposet
@@ -29,7 +30,20 @@ For a user guide and API description, you can check out the documentation of `py
 
 Installation
 ~~~~~~~~~~~~
-Currently, the library is not available for an easy installation via `pip`. Check out the `Github repository <https://github.com/anergictcell/hpo3>`_ for an installation guide from source.
+HPO3 is provided as binary wheels for most platforms on PyPI, so in most cases you can just run
+
+.. code-block:: bash
+
+   bash
+   pip install hpo3
+
+(For macOS, only Python 3.10 and 3.11 are supported, for both x64 and arm at the moment.)
+
+You should download a localy copy of the HPO ontology, the easiest way is to grab it from the `hpo` repository:
+
+.. code-block:: bash
+
+   wget https://raw.githubusercontent.com/anergictcell/hpo/main/tests/ontology.hpo
 
 
 Examples
@@ -204,11 +218,3 @@ Examples
 
    enrichments = helper.batch_gene_enrichment(disease_sets)
    print(f"The most enriched gene for {diseases[0]} is {enrichments[0][0]}")
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
