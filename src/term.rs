@@ -241,6 +241,29 @@ impl PyHpoTerm {
             })
     }
 
+
+    /// A list of the phenotypical categories the term belongs to
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     term = Ontology.hpo(10049)
+    ///     for cat in term.categories:
+    ///         print(cat.name)
+    ///
+    #[getter(categories)]
+    fn categories(&self) -> PyResult<Vec<PyHpoTerm>> {
+        self.hpo()
+            .categories()
+            .iter()
+            .map(|id| pyterm_from_id(id.as_u32()))
+            .collect()
+    }
+
     #[pyo3(text_signature = "($self, other)")]
     fn parent_of(&self, other: &PyHpoTerm) -> bool {
         self.hpo().parent_of(&other.hpo())

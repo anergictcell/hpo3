@@ -4,7 +4,6 @@ build-backend = "maturin"
 
 [project]
 name = "hpo3"
-version = "0.2.2"
 description = "A drop-in replacement for PyHPO using a Rust backend for faster performance"
 readme = "README.md"
 requires-python = ">=3.7"
@@ -23,6 +22,8 @@ classifiers = [
 ]
 license = {text = "MIT"}
 authors = [{name = "Jonas Marcello", email = "jonas.marcello@esbme.com"}]
+
+dynamic = ["version"]
 
 [project.urls]
 homepage = "https://github.com/anergictcell/hpo3"

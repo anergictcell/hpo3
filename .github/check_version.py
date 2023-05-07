@@ -27,10 +27,10 @@ def version_from_tag() -> Optional[str]:
 
 
 def version_from_toml() -> Optional[str]:
-    with open("pyproject.toml", "rb") as f:
+    with open("Cargo.toml", "rb") as f:
         data = tomllib.load(f)
         try:
-            return data['project']['version']
+            return data['package']['version']
         except KeyError:
             print("No version defined in pyproject.toml")
             return None

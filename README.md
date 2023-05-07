@@ -7,11 +7,11 @@ Using the Rust-based `hpo` library increases performance easily 100 fold for man
 `HPO3` aims to use the exact same API and methods as PyHPO to allow a very simple replacement for all analysis and statistics methods. However, it does not allow customization and modification of the ontology or individual terms, genes etc.
 
 ## Current status
-The library is being actively developed right now and many things might change. Most functionality is present and working, though not extensively tested. If you require correct data and stability, keep using PyHPO. If you need performance and speed for rapid experiments, give `HPO3` a try.
+Most functionality of PyHPO is present and working, though not extensively tested. If you require correct data and stability, keep using PyHPO. If you need performance and speed for rapid experiments, give `HPO3` a try.
 
-Similarity calculations are implemented and working both for single terms and for HPOSets. Hyergeometric enrichment is implemted, but with some differences compared to PyHPO.
+Similarity calculations are implemented and working both for single terms and for HPOSets. Hyergeometric enrichment is implemted, but with some small differences compared to PyHPO.
 
-I'm also planning to add some batchwise processing methods that can take full use of parallel processing in Rust, further improving the speed.
+There are some helper functions for parallel batchwise processing, which are amazing if you plan on analyzing large datasets.
 
 ## Installation
 HPO3 is provided as binary wheels for most platforms on PyPI, so in most cases you can just run
@@ -20,11 +20,7 @@ pip install hpo3
 ```
 (For macOS, only Python 3.10 and 3.11 are supported, for both x64 and arm at the moment.)
 
-You should download a localy copy of the HPO ontology, the easiest way is to grab it from the `hpo` repository:
-
-```bash
-wget https://raw.githubusercontent.com/anergictcell/hpo/main/tests/ontology.hpo
-```
+hpo3 ships with a prebuilt HPO Ontology by default, so you can start right away.
 
 ## Examples
 
@@ -34,7 +30,10 @@ There are also more examples in the [PyHPO documentation](https://centogene.gith
 from pyhpo import Ontology, HPOSet
 
 # initilize the Ontology
-_ = Ontology()
+Ontology()
+
+for term in Ontology:
+    print(f"{term.id} | {term.name}")
 
 # Declare the clinical information of the patients
 patient_1 = HPOSet.from_queries([
@@ -78,10 +77,22 @@ len(term.genes)
 len(term.omim_diseases)
 #> 844
 
-# Get a list of all parent terms
+# Get a list of all direct parent terms
 for p in term.parents:
     print(p)
 #> HP:0010674 | Abnormality of the curvature of the vertebral column
+
+# Get a list of all ancestor (direct + indirect parent) terms
+for p in term.all_parents:
+    print(p)
+#> HP:0000001 | All
+#> HP:0011842 | Abnormal skeletal morphology
+#> HP:0009121 | Abnormal axial skeleton morphology
+#> HP:0033127 | Abnormality of the musculoskeletal system
+#> HP:0010674 | Abnormality of the curvature of the vertebral column
+#> HP:0000118 | Phenotypic abnormality
+#> HP:0000924 | Abnormality of the skeletal system
+#> HP:0000925 | Abnormality of the vertebral column
 
 # Get a list of all children terms
 for p in term.children:
@@ -93,6 +104,15 @@ HP:0100884 | Compensatory scoliosis
 HP:0002944 | Thoracolumbar scoliosis
 HP:0002751 | Kyphoscoliosis
 """
+
+# Show the categories a term belongs to
+for term in Ontology[10049].categories:
+    print(term)
+"""
+HP:0033127 | Abnormality of the musculoskeletal system
+HP:0040064 | Abnormality of limbs
+"""
+
 ```
 
 
@@ -101,7 +121,7 @@ I'm in the process adding proper documentation, but the process is not yet that 
 Otherwise, use the [PyHPO documentation](https://centogene.github.io/pyhpo/) for now.
 
 ## Parallel processing
-`hpo3` is using Rust as backend, so it's able to fully utilize parallel processing. To benefit from this even greater, `hpo3` provides some special helper functions for parallel batch processing
+`hpo3` is using Rust as backend, so it's able to fully utilize parallel processing. To benefit from this even greater, `hpo3` provides some special helper functions for parallel batch processing in the `helper` submodule
 
 ### Similarity scores of HPOSets
 Pairwise similarity comparison of `HPOSet`s. Specify a list of comparisons to run and `hpo3` calculates the result using all available CPUs.
