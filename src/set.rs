@@ -256,16 +256,11 @@ impl PyHpoSet {
     ///
     /// TODO: Convert this to an iterator
     fn terms(&self) -> PyResult<Vec<PyHpoTerm>> {
-        let terms: Vec<PyHpoTerm> = self
+        self
             .ids
             .iter()
-            .filter_map(|id| pyterm_from_id(id.as_u32()).ok())
-            .collect();
-        if terms.len() == self.ids.len() {
-            Ok(terms)
-        } else {
-            Err(PyRuntimeError::new_err("Some terms are not correct"))
-        }
+            .map(|id| pyterm_from_id(id.as_u32()))
+            .collect()
     }
 
     #[classmethod]
