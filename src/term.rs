@@ -7,6 +7,8 @@ use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
+use rayon::prelude::*;
+
 use hpo::annotations::AnnotationId;
 use hpo::similarity::Similarity;
 use hpo::term::HpoTermId;
@@ -400,13 +402,13 @@ impl PyHpoTerm {
     ///
     ///     from pyhpo import Ontology
     ///
-    ///     ont = Ontology()
-    ///     term = ont.hpo(11968)
+    ///     Ontology()
+    ///     term = Ontology[11968]
     ///
-    ///     term.similarity(1743)  
+    ///     term.similarity_score(Ontology[1743])
     ///
     ///     # compare HP:0011968 and HP:0001743 using Gene
-    ///     term.similarity(1743, kind="gene")
+    ///     term.similarity_score(Ontology[1743], kind="gene")
     ///
     #[pyo3(signature = (other, kind = "omim", method = "graphic"))]
     #[pyo3(text_signature = "($self, other, kind, method)")]
@@ -419,6 +421,78 @@ impl PyHpoTerm {
         let similarity = hpo::similarity::Builtins::new(method, kind.into())
             .map_err(|_| PyRuntimeError::new_err("Unknown method to calculate similarity"))?;
         Ok(similarity.calculate(&term_a, &term_b))
+    }
+
+    /// Calculates the similarity score between the term and a batch of other terms
+    ///
+    /// This method is useful if you want to compare the term to **thousands** of other terms.
+    /// It will utilize all avaible CPU for parallel processing.
+    ///
+    /// Arguments
+    /// ---------
+    /// others: `List[int]`
+    ///     ID of the other term as `int` (`HP:0000123` --> `123`)
+    /// kind: `str`, default: `omim`
+    ///     Which kind of information content to use for similarity calculation
+    ///
+    ///     Available options:
+    ///
+    ///     * **omim**
+    ///     * **gene**
+    ///
+    /// method: `str`, default `graphic`
+    ///     The method to use to calculate the similarity.
+    ///
+    ///     Available options:
+    ///
+    ///     * **resnik** - Resnik P, Proceedings of the 14th IJCAI, (1995)
+    ///     * **lin** - Lin D, Proceedings of the 15th ICML, (1998)
+    ///     * **jc** - Jiang J, Conrath D, ROCLING X, (1997)
+    ///       This is different to PyHPO
+    ///     * **jc2** - Jiang J, Conrath D, ROCLING X, (1997)
+    ///       Same as `jc`, but kept for backwards compatibility
+    ///     * **rel** - Relevance measure - Schlicker A, et.al.,
+    ///       BMC Bioinformatics, (2006)
+    ///     * **ic** - Information coefficient - Li B, et. al., arXiv, (2010)
+    ///     * **graphic** - Graph based Information coefficient -
+    ///       Deng Y, et. al., PLoS One, (2015)
+    ///     * **dist** - Distance between terms
+    ///
+    /// Returns
+    /// -------
+    /// `List[float]`
+    ///     The similarity scores
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///
+    ///     Ontology()
+    ///     term = Ontology[11968]
+    ///
+    ///     term.similarity_scores(list(Ontology))
+    ///
+    ///
+    #[pyo3(signature = (others, kind = "omim", method = "graphic"))]
+    #[pyo3(text_signature = "($self, others, kind, method)")]
+    fn similarity_scores(&self, others: Vec<PyHpoTerm>, kind: &str, method: &str) -> PyResult<Vec<f32>> {
+        let kind = PyInformationContentKind::try_from(kind)?;
+
+        let term_a = self.hpo();
+
+        let similarity = hpo::similarity::Builtins::new(method, kind.into())
+            .map_err(|_| PyRuntimeError::new_err("Unknown method to calculate similarity"))?;
+
+    Ok(others
+        .par_iter()
+        .map(|term_b| {
+            let t2: hpo::HpoTerm = term_b.into();
+            similarity.calculate(&term_a, &t2)
+        })
+        .collect())
     }
 
     #[pyo3(signature = (verbose = false))]
