@@ -1,9 +1,11 @@
+use hpo::annotations::{GeneId, OmimDiseaseId};
 use pyo3::exceptions::PyNotImplementedError;
 use pyo3::types::PyDict;
 use pyo3::{exceptions::PyKeyError, prelude::*};
 
 use hpo::stats::hypergeom::{disease_enrichment, gene_enrichment};
 
+use crate::annotations::{PyGene, PyOmimDisease};
 use crate::get_ontology;
 use crate::set::PyHpoSet;
 
@@ -107,14 +109,14 @@ impl PyEnrichmentModel {
                 let mut enr = gene_enrichment(ont, &set);
                 enr.sort_by(|a, b| a.pvalue().partial_cmp(&b.pvalue()).unwrap());
                 enr.iter()
-                    .map(|enrichment| enrichment_dict(py, enrichment))
+                    .map(|enrichment| gene_enrichment_dict(py, enrichment))
                     .collect::<PyResult<Vec<&PyDict>>>()
             }
             EnrichmentType::Omim => {
                 let mut enr = disease_enrichment(ont, &set);
                 enr.sort_by(|a, b| a.pvalue().partial_cmp(&b.pvalue()).unwrap());
                 enr.iter()
-                    .map(|enrichment| enrichment_dict(py, enrichment))
+                    .map(|enrichment| disease_enrichment_dict(py, enrichment))
                     .collect::<PyResult<Vec<&PyDict>>>()
             }
         };
@@ -122,17 +124,38 @@ impl PyEnrichmentModel {
     }
 }
 
-pub(crate) fn enrichment_dict<'a, T>(
+pub(crate) fn disease_enrichment_dict<'a, T>(
     py: Python<'a>,
     enrichment: &hpo::stats::Enrichment<T>,
 ) -> PyResult<&'a PyDict>
 where
     T: std::fmt::Display + hpo::annotations::AnnotationId,
 {
+    let disease = get_ontology()?
+        .omim_disease(&OmimDiseaseId::from(enrichment.id().as_u32()))
+        .map(|d| PyOmimDisease::new(*d.id(), d.name().into())).unwrap();
     let dict = PyDict::new(py);
     dict.set_item("enrichment", enrichment.pvalue())?;
     dict.set_item("fold", enrichment.enrichment())?;
     dict.set_item("count", enrichment.count())?;
-    dict.set_item("item", enrichment.id().as_u32())?;
+    dict.set_item("item", disease.into_py(py))?;
+    Ok(dict)
+}
+
+pub(crate) fn gene_enrichment_dict<'a, T>(
+    py: Python<'a>,
+    enrichment: &hpo::stats::Enrichment<T>,
+) -> PyResult<&'a PyDict>
+where
+    T: std::fmt::Display + hpo::annotations::AnnotationId,
+{
+    let gene = get_ontology()?
+        .gene(&GeneId::from(enrichment.id().as_u32()))
+        .map(|g| PyGene::new(*g.id(), g.name().into())).unwrap();
+    let dict = PyDict::new(py);
+    dict.set_item("enrichment", enrichment.pvalue())?;
+    dict.set_item("fold", enrichment.enrichment())?;
+    dict.set_item("count", enrichment.count())?;
+    dict.set_item("item", gene.into_py(py))?;
     Ok(dict)
 }

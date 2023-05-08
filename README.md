@@ -7,11 +7,11 @@ Using the Rust-based `hpo` library increases performance easily 100 fold for man
 `HPO3` aims to use the exact same API and methods as PyHPO to allow a very simple replacement for all analysis and statistics methods. However, it does not allow customization and modification of the ontology or individual terms, genes etc.
 
 ## Current status
-Most functionality of PyHPO is present and working, though not extensively tested. If you require correct data and stability, keep using PyHPO. If you need performance and speed for rapid experiments, give `HPO3` a try.
-
-Similarity calculations are implemented and working both for single terms and for HPOSets. Hyergeometric enrichment is implemted, but with some small differences compared to PyHPO.
+Most functionality of PyHPO is present and working, giving correct results. Similarity calculations and hypergeometric enrichment scores are implemented and working both for single terms and for HPOSets.
 
 There are some helper functions for parallel batchwise processing, which are amazing if you plan on analyzing large datasets.
+
+If you need performance and speed for rapid experiments, give `HPO3` a try.
 
 ## Installation
 HPO3 is provided as binary wheels for most platforms on PyPI, so in most cases you can just run

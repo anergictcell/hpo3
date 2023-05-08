@@ -43,6 +43,10 @@ impl PyHpoTerm {
         ont.hpo(self.id)
             .expect("the term itself must exist in the ontology")
     }
+
+    pub fn hpo_term_id(&self) -> HpoTermId {
+        self.id
+    }
 }
 
 impl TryFrom<HpoTermId> for PyHpoTerm {

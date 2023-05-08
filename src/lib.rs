@@ -283,7 +283,7 @@ fn batch_gene_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<Vec
         .iter()
         .map(|set| {
             set.iter()
-                .map(|enrichment| crate::enrichment::enrichment_dict(py, enrichment))
+                .map(|enrichment| crate::enrichment::gene_enrichment_dict(py, enrichment))
                 .collect::<PyResult<Vec<&PyDict>>>()
         })
         .collect::<PyResult<Vec<Vec<&PyDict>>>>()
@@ -305,7 +305,7 @@ fn batch_disease_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<
         .iter()
         .map(|set| {
             set.iter()
-                .map(|enrichment| crate::enrichment::enrichment_dict(py, enrichment))
+                .map(|enrichment| crate::enrichment::disease_enrichment_dict(py, enrichment))
                 .collect::<PyResult<Vec<&PyDict>>>()
         })
         .collect::<PyResult<Vec<Vec<&PyDict>>>>()

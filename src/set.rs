@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 use std::num::ParseIntError;
 
 use rayon::prelude::*;
@@ -18,7 +18,7 @@ use crate::{
     get_ontology,
     information_content::PyInformationContentKind,
 };
-use crate::{pyterm_from_id, term_from_query, PyQuery};
+use crate::{pyterm_from_id, term_from_query, PyQuery, term_from_id};
 
 #[pyclass(name = "HPOSet")]
 #[derive(Clone)]
@@ -236,8 +236,29 @@ impl PyHpoSet {
     }
 
     #[allow(non_snake_case)]
-    fn toJSON(&self) -> PyResult<Vec<&PyDict>> {
-        unimplemented!()
+    fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Vec<&PyDict>> {
+        self.ids.iter().map(|id|{
+            let dict = PyDict::new(py);
+            let term = term_from_id(id.as_u32())?;
+            dict.set_item("name", term.name())?;
+            dict.set_item("id", term.id().to_string())?;
+            dict.set_item("int", term.id().as_u32())?;
+
+            if verbose {
+                let ic = PyDict::new(py);
+                ic.set_item("gene", term.information_content().gene())?;
+                ic.set_item("omim", term.information_content().omim_disease())?;
+                ic.set_item("orpha", f32::NAN)?;
+                ic.set_item("decipher", f32::NAN)?;
+                dict.set_item::<&str, Vec<&str>>("synonym", vec![])?;
+                dict.set_item("comment", "")?;
+                dict.set_item("def", "")?;
+                dict.set_item::<&str, Vec<&str>>("xref", vec![])?;
+                dict.set_item::<&str, Vec<&str>>("is_a", vec![])?;
+                dict.set_item("ic", ic)?;
+            }
+            Ok(dict)
+        }).collect()
     }
 
     fn serialize(&self) -> String {
@@ -324,6 +345,14 @@ impl PyHpoSet {
             }
         )
     }
+
+    fn __iter__(&self) -> Iter {
+        Iter::new(&self.ids)
+    }
+
+    fn __contains__(&self, term: &PyHpoTerm) -> bool {
+        self.ids.contains(&term.hpo_term_id())
+    }
 }
 
 impl<'a> PyHpoSet {
@@ -355,6 +384,32 @@ impl TryFrom<&PyOmimDisease> for PyHpoSet {
             .into())
     }
 }
+
+
+#[pyclass(name = "SetIterator")]
+struct Iter {
+    ids: VecDeque<HpoTermId>
+}
+
+impl Iter {
+    fn new(ids: &HpoGroup) -> Self {
+        Self { ids: ids.iter().collect() }
+    }
+}
+
+#[pymethods]
+impl Iter {
+    #[allow(clippy::self_named_constructors)]
+    fn __iter__(slf: PyRef<Self>) -> PyRef<Self> {
+        slf
+    }
+
+    fn __next__(mut slf: PyRefMut<Self>) -> Option<PyHpoTerm> {
+        slf.ids.pop_front().map(|id| pyterm_from_id(id.as_u32()).unwrap())
+    }
+}
+
+
 
 #[pyclass(name = "BasicHPOSet")]
 #[derive(Clone, Default, Debug)]

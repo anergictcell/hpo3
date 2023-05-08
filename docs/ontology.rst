@@ -1,15 +1,18 @@
 Ontology
 ========
 
-The Ontology is provided as a singleton. It must be called once to load all terms and annotations. Afterwards, the complete Ontology is available from the global scope across all submodules.
+The Ontology is provided as a singleton. It must be instantiated once to load all terms and annotations. Afterwards, the complete Ontology is available from the global scope across all submodules.
 
 
-Construct
----------
+Instantiation
+-------------
+The `Ontology` must be instantiated once in every running program. This loads all HPO terms, their connections and annotation into memory.
+
 Arguments
 ~~~~~~~~~
 path: str
-    Path to the source files (default: `./ontology.hpo`)
+    Path to the source files (default: `None`)
+    Leave blank to load the builtin Ontology (recommended)
 binary: bool
     Whether the input format is binary (default `true`)
 
@@ -20,7 +23,7 @@ Examples
 
     from pyhpo import Ontology
     
-    Ontology("path/to/ontology.hpo")
+    Ontology()
     
     term = Ontology.hpo(11968)
     term.name()  # ==> 'Feeding difficulties'
