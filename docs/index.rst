@@ -1,7 +1,3 @@
-.. hpo3 documentation master file, created by
-   sphinx-quickstart on Sat Dec 31 16:56:03 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
 
 :math:`HPO_3`
 =============
@@ -39,12 +35,7 @@ HPO3 is provided as binary wheels for most platforms on PyPI, so in most cases y
 
 (For macOS, only Python 3.10 and 3.11 are supported, for both x64 and arm at the moment.)
 
-You should download a localy copy of the HPO ontology, the easiest way is to grab it from the `hpo` repository:
-
-.. code-block:: bash
-
-   wget https://raw.githubusercontent.com/anergictcell/hpo/main/tests/ontology.hpo
-
+hpo3 ships with a prebuilt HPO Ontology by default, so you can start right away.
 
 Examples
 ~~~~~~~~
@@ -54,7 +45,7 @@ Examples
    from pyhpo import stats, Ontology, HPOSet, Gene
 
    # initilize the Ontology
-   _ = Ontology()
+   Ontology()
 
    # Declare the clinical information of the patients
    patient_1 = HPOSet.from_queries([
