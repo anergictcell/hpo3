@@ -2,7 +2,8 @@ use std::collections::HashSet;
 use std::hash::Hash;
 
 use pyo3::class::basic::CompareOp;
-use pyo3::exceptions::PyTypeError;
+use pyo3::exceptions::{PyTypeError, PyKeyError};
+use pyo3::types::PyDict;
 use pyo3::{prelude::*, types::PyType};
 
 use hpo::annotations::AnnotationId;
@@ -82,16 +83,34 @@ impl PyGene {
     }
 
     #[classmethod]
-    fn get(_cls: &PyType, query: PyQuery) -> PyResult<Option<PyGene>> {
+    fn get(_cls: &PyType, query: PyQuery) -> PyResult<PyGene> {
         let ont = get_ontology()?;
         match query {
-            PyQuery::Str(symbol) => Ok(ont
+            PyQuery::Str(symbol) => ont
                 .gene_by_name(&symbol)
-                .map(|g| PyGene::new(*g.id(), g.name().into()))),
-            PyQuery::Id(gene_id) => Ok(ont
+                .ok_or(PyKeyError::new_err("No gene found for query"))
+                .map(|g| PyGene::new(*g.id(), g.name().into())),
+            PyQuery::Id(gene_id) => ont
                 .gene(&gene_id.into())
-                .map(|g| PyGene::new(*g.id(), g.name().into()))),
+                .ok_or(PyKeyError::new_err("No gene found for query"))
+                .map(|g| PyGene::new(*g.id(), g.name().into())),
         }
+    }
+
+    #[pyo3(signature = (verbose = false))]
+    #[pyo3(text_signature = "($self, verbose)")]
+    #[allow(non_snake_case)]
+    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<&PyDict> {
+        let dict = PyDict::new(py);
+        dict.set_item("name", self.name())?;
+        dict.set_item("id", self.id())?;
+        dict.set_item("symbol", self.name())?;
+
+        if verbose {
+            let hpos: Vec<u32> = self.hpo()?.iter().copied().collect();
+            dict.set_item("hpo", hpos)?;
+        }
+        Ok(dict)
     }
 
     fn __str__(&self) -> String {
@@ -219,11 +238,28 @@ impl PyOmimDisease {
     }
 
     #[classmethod]
-    fn get(_cls: &PyType, id: u32) -> PyResult<Option<PyOmimDisease>> {
+    fn get(_cls: &PyType, id: u32) -> PyResult<PyOmimDisease> {
         let ont = get_ontology()?;
-        Ok(ont
+        ont
             .omim_disease(&id.into())
-            .map(|d| PyOmimDisease::new(*d.id(), d.name().into())))
+            .ok_or(PyKeyError::new_err("'No disease found for query'"))
+            .map(|d| PyOmimDisease::new(*d.id(), d.name().into()))
+    }
+
+    #[pyo3(signature = (verbose = false))]
+    #[pyo3(text_signature = "($self, verbose)")]
+    #[allow(non_snake_case)]
+    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<&PyDict> {
+        let dict = PyDict::new(py);
+        dict.set_item("name", self.name())?;
+        dict.set_item("id", self.id())?;
+
+        if verbose {
+            let hpos: Vec<u32> = self.hpo()?.iter().copied().collect();
+            dict.set_item("hpo", hpos)?;
+        }
+
+        Ok(dict)
     }
 
     fn __str__(&self) -> String {

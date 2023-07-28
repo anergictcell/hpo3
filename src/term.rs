@@ -247,7 +247,6 @@ impl PyHpoTerm {
             })
     }
 
-
     /// A list of the phenotypical categories the term belongs to
     ///
     /// Examples
@@ -478,7 +477,12 @@ impl PyHpoTerm {
     ///
     #[pyo3(signature = (others, kind = "omim", method = "graphic"))]
     #[pyo3(text_signature = "($self, others, kind, method)")]
-    fn similarity_scores(&self, others: Vec<PyHpoTerm>, kind: &str, method: &str) -> PyResult<Vec<f32>> {
+    fn similarity_scores(
+        &self,
+        others: Vec<PyHpoTerm>,
+        kind: &str,
+        method: &str,
+    ) -> PyResult<Vec<f32>> {
         let kind = PyInformationContentKind::try_from(kind)?;
 
         let term_a = self.hpo();
@@ -486,13 +490,13 @@ impl PyHpoTerm {
         let similarity = hpo::similarity::Builtins::new(method, kind.into())
             .map_err(|_| PyRuntimeError::new_err("Unknown method to calculate similarity"))?;
 
-    Ok(others
-        .par_iter()
-        .map(|term_b| {
-            let t2: hpo::HpoTerm = term_b.into();
-            similarity.calculate(&term_a, &t2)
-        })
-        .collect())
+        Ok(others
+            .par_iter()
+            .map(|term_b| {
+                let t2: hpo::HpoTerm = term_b.into();
+                similarity.calculate(&term_a, &t2)
+            })
+            .collect())
     }
 
     #[pyo3(signature = (verbose = false))]
@@ -509,11 +513,11 @@ impl PyHpoTerm {
             let ic = PyDict::new(py);
             ic.set_item("gene", term.information_content().gene())?;
             ic.set_item("omim", term.information_content().omim_disease())?;
-            ic.set_item("orpha", f32::NAN)?;
-            ic.set_item("decipher", f32::NAN)?;
+            ic.set_item("orpha", 0.0)?;
+            ic.set_item("decipher", 0.0)?;
             dict.set_item::<&str, Vec<&str>>("synonym", vec![])?;
             dict.set_item("comment", "")?;
-            dict.set_item("def", "")?;
+            dict.set_item("definition", "")?;
             dict.set_item::<&str, Vec<&str>>("xref", vec![])?;
             dict.set_item::<&str, Vec<&str>>("is_a", vec![])?;
             dict.set_item("ic", ic)?;

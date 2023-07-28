@@ -15,6 +15,7 @@ use hpo::{HpoTerm, Ontology as ActualOntology};
 mod annotations;
 mod enrichment;
 mod information_content;
+mod linkage;
 mod ontology;
 mod set;
 mod term;
@@ -55,7 +56,7 @@ fn from_obo(path: &str) -> usize {
 fn get_ontology() -> PyResult<&'static ActualOntology> {
     ONTOLOGY.get().ok_or_else(|| {
         pyo3::exceptions::PyNameError::new_err(
-            "You must build the ontology first: `ont = pyhpo.Ontology()`",
+            "You must build the ontology first: `>> pyhpo.Ontology()`",
         )
     })
 }
@@ -67,6 +68,10 @@ fn pyterm_from_id(id: u32) -> PyResult<PyHpoTerm> {
 }
 
 /// Returns an [`HpoTerm`] from a `u32` ID
+///
+/// # Errors
+///
+/// PyKeyError: No term with that ID present in Ontology
 fn term_from_id(id: u32) -> PyResult<hpo::HpoTerm<'static>> {
     let ont = get_ontology()?;
     match ont.hpo(id) {
@@ -76,13 +81,23 @@ fn term_from_id(id: u32) -> PyResult<hpo::HpoTerm<'static>> {
 }
 
 /// Returns an [`HpoTerm`] from a `str` or `u32` query
+///
+/// # Errors
+///
+/// PyValueError: query cannot be converted to HpoTermId
+/// PyRuntimeError: query is a name and does not have a match in the Ontology
 fn term_from_query(query: PyQuery) -> PyResult<HpoTerm<'static>> {
     match query {
-        PyQuery::Id(id) => return term_from_id(id),
+        PyQuery::Id(id) => {
+            return term_from_id(id).map_err(|_| PyRuntimeError::new_err("Unknown HPO term"))
+        }
         PyQuery::Str(term_name) => {
             if term_name.starts_with("HP:") {
                 match HpoTermId::try_from(term_name.as_str()) {
-                    Ok(termid) => return term_from_id(termid.as_u32()),
+                    Ok(termid) => {
+                        return term_from_id(termid.as_u32())
+                            .map_err(|_| PyRuntimeError::new_err("Unknown HPO term"))
+                    }
                     Err(_) => {
                         return Err(PyValueError::new_err(format!("Invalid id: {}", term_name)))
                     }
@@ -104,6 +119,12 @@ fn term_from_query(query: PyQuery) -> PyResult<HpoTerm<'static>> {
 pub enum PyQuery {
     Id(u32),
     Str(String),
+}
+
+#[derive(FromPyObject)]
+pub enum TermOrId {
+    Term(PyHpoTerm),
+    Id(u32),
 }
 
 /// Python bindings for the Rust hpo crate
@@ -145,6 +166,7 @@ fn register_set_module(py: Python<'_>, parent_module: &PyModule) -> PyResult<()>
     let child_module = PyModule::new(py, "set")?;
     child_module.add_class::<set::BasicPyHpoSet>()?;
     child_module.add_class::<set::PyHpoSet>()?;
+    child_module.add_class::<set::PhenoSet>()?;
     parent_module.add_submodule(child_module)?;
 
     py.import("sys")?
@@ -171,6 +193,7 @@ fn register_helper_module(py: Python<'_>, parent_module: &PyModule) -> PyResult<
 fn register_stats_module(py: Python<'_>, parent_module: &PyModule) -> PyResult<()> {
     let child_module = PyModule::new(py, "stats")?;
     child_module.add_class::<PyEnrichmentModel>()?;
+    child_module.add_function(wrap_pyfunction!(linkage::linkage, child_module)?)?;
     parent_module.add_submodule(child_module)?;
 
     py.import("sys")?

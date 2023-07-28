@@ -10,6 +10,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.18.0", features = ["extension-module"] }
-hpo = "0.7.1"
+hpo = "0.8.0"
 rayon = "1.6.1"
 once_cell = "1.17"

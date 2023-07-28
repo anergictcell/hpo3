@@ -3,7 +3,7 @@ use std::num::ParseIntError;
 
 use rayon::prelude::*;
 
-use pyo3::exceptions::PyRuntimeError;
+use pyo3::exceptions::{PyAttributeError, PyRuntimeError};
 use pyo3::types::PyDict;
 use pyo3::{prelude::*, types::PyType};
 
@@ -18,7 +18,7 @@ use crate::{
     get_ontology,
     information_content::PyInformationContentKind,
 };
-use crate::{pyterm_from_id, term_from_query, PyQuery, term_from_id};
+use crate::{pyterm_from_id, term_from_id, term_from_query, PyQuery, TermOrId};
 
 #[pyclass(name = "HPOSet")]
 #[derive(Clone)]
@@ -55,12 +55,22 @@ impl From<HpoSet<'_>> for PyHpoSet {
 #[pymethods]
 impl PyHpoSet {
     #[new]
-    fn new(terms: Vec<u32>) -> Self {
+    fn new(terms: Vec<TermOrId>) -> Self {
         let mut ids = HpoGroup::new();
         for id in terms {
-            ids.insert(id);
+            match id {
+                TermOrId::Id(x) => ids.insert(x),
+                TermOrId::Term(x) => ids.insert(x.hpo_term_id().as_u32()),
+            };
         }
         Self { ids }
+    }
+
+    fn add(&mut self, term: TermOrId) {
+        match term {
+            TermOrId::Id(x) => self.ids.insert(x),
+            TermOrId::Term(x) => self.ids.insert(x.hpo_term_id().as_u32()),
+        };
     }
 
     fn child_nodes(&self) -> PyResult<Self> {
@@ -178,7 +188,8 @@ impl PyHpoSet {
         let set_a = HpoSet::new(ont, self.ids.clone());
         let set_b = HpoSet::new(ont, other.ids.clone());
 
-        let kind = PyInformationContentKind::try_from(kind)?;
+        let kind = PyInformationContentKind::try_from(kind)
+            .map_err(|_| PyAttributeError::new_err("Invalid Information content"))?;
 
         let similarity = hpo::similarity::Builtins::new(method, kind.into())
             .map_err(|_| PyRuntimeError::new_err("Unknown method to calculate similarity"))?;
@@ -235,30 +246,35 @@ impl PyHpoSet {
             .collect())
     }
 
+    #[pyo3(signature = (verbose = false))]
+    #[pyo3(text_signature = "($self, verbose)")]
     #[allow(non_snake_case)]
     fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Vec<&PyDict>> {
-        self.ids.iter().map(|id|{
-            let dict = PyDict::new(py);
-            let term = term_from_id(id.as_u32())?;
-            dict.set_item("name", term.name())?;
-            dict.set_item("id", term.id().to_string())?;
-            dict.set_item("int", term.id().as_u32())?;
+        self.ids
+            .iter()
+            .map(|id| {
+                let dict = PyDict::new(py);
+                let term = term_from_id(id.as_u32())?;
+                dict.set_item("name", term.name())?;
+                dict.set_item("id", term.id().to_string())?;
+                dict.set_item("int", term.id().as_u32())?;
 
-            if verbose {
-                let ic = PyDict::new(py);
-                ic.set_item("gene", term.information_content().gene())?;
-                ic.set_item("omim", term.information_content().omim_disease())?;
-                ic.set_item("orpha", f32::NAN)?;
-                ic.set_item("decipher", f32::NAN)?;
-                dict.set_item::<&str, Vec<&str>>("synonym", vec![])?;
-                dict.set_item("comment", "")?;
-                dict.set_item("def", "")?;
-                dict.set_item::<&str, Vec<&str>>("xref", vec![])?;
-                dict.set_item::<&str, Vec<&str>>("is_a", vec![])?;
-                dict.set_item("ic", ic)?;
-            }
-            Ok(dict)
-        }).collect()
+                if verbose {
+                    let ic = PyDict::new(py);
+                    ic.set_item("gene", term.information_content().gene())?;
+                    ic.set_item("omim", term.information_content().omim_disease())?;
+                    ic.set_item("orpha", 0.0)?;
+                    ic.set_item("decipher", 0.0)?;
+                    dict.set_item::<&str, Vec<&str>>("synonym", vec![])?;
+                    dict.set_item("comment", "")?;
+                    dict.set_item("definition", "")?;
+                    dict.set_item::<&str, Vec<&str>>("xref", vec![])?;
+                    dict.set_item::<&str, Vec<&str>>("is_a", vec![])?;
+                    dict.set_item("ic", ic)?;
+                }
+                Ok(dict)
+            })
+            .collect()
     }
 
     fn serialize(&self) -> String {
@@ -277,8 +293,7 @@ impl PyHpoSet {
     ///
     /// TODO: Convert this to an iterator
     fn terms(&self) -> PyResult<Vec<PyHpoTerm>> {
-        self
-            .ids
+        self.ids
             .iter()
             .map(|id| pyterm_from_id(id.as_u32()))
             .collect()
@@ -385,15 +400,16 @@ impl TryFrom<&PyOmimDisease> for PyHpoSet {
     }
 }
 
-
 #[pyclass(name = "SetIterator")]
 struct Iter {
-    ids: VecDeque<HpoTermId>
+    ids: VecDeque<HpoTermId>,
 }
 
 impl Iter {
     fn new(ids: &HpoGroup) -> Self {
-        Self { ids: ids.iter().collect() }
+        Self {
+            ids: ids.iter().collect(),
+        }
     }
 }
 
@@ -405,11 +421,11 @@ impl Iter {
     }
 
     fn __next__(mut slf: PyRefMut<Self>) -> Option<PyHpoTerm> {
-        slf.ids.pop_front().map(|id| pyterm_from_id(id.as_u32()).unwrap())
+        slf.ids
+            .pop_front()
+            .map(|id| pyterm_from_id(id.as_u32()).unwrap())
     }
 }
-
-
 
 #[pyclass(name = "BasicHPOSet")]
 #[derive(Clone, Default, Debug)]
@@ -422,12 +438,16 @@ impl BasicPyHpoSet {
         for id in ids {
             group.insert(id);
         }
-        let mut set = HpoSet::new(ont, group);
+        let set = HpoSet::new(ont, group);
         let mut set = set.child_nodes();
         set.replace_obsolete();
         set.remove_obsolete();
         set.remove_modifier();
-        PyHpoSet::new(set.iter().map(|term| term.id().as_u32()).collect())
+        PyHpoSet::new(
+            set.iter()
+                .map(|term| TermOrId::Id(term.id().as_u32()))
+                .collect(),
+        )
     }
 }
 
@@ -449,6 +469,57 @@ impl BasicPyHpoSet {
     #[classmethod]
     fn from_serialized(_cls: &PyType, pickle: &str) -> PyResult<PyHpoSet> {
         Ok(BasicPyHpoSet::build(
+            pickle
+                .split('+')
+                .map(|id| id.parse::<u32>())
+                .collect::<Result<Vec<u32>, ParseIntError>>()?
+                .iter()
+                .map(|id| HpoTermId::from_u32(*id)),
+        ))
+    }
+}
+
+#[pyclass(name = "HPOPhenoSet")]
+#[derive(Clone, Default, Debug)]
+pub(crate) struct PhenoSet;
+
+impl PhenoSet {
+    fn build<I: IntoIterator<Item = HpoTermId>>(ids: I) -> PyHpoSet {
+        let ont = get_ontology().expect("Ontology must be initialized");
+        let mut group = HpoGroup::new();
+        for id in ids {
+            group.insert(id);
+        }
+        let mut set = HpoSet::new(ont, group);
+        set.replace_obsolete();
+        set.remove_obsolete();
+        set.remove_modifier();
+        PyHpoSet::new(
+            set.iter()
+                .map(|term| TermOrId::Id(term.id().as_u32()))
+                .collect(),
+        )
+    }
+}
+
+#[pymethods]
+impl PhenoSet {
+    fn __call__(&self, terms: Vec<u32>) -> PyHpoSet {
+        PhenoSet::build(terms.iter().map(|id| HpoTermId::from_u32(*id)))
+    }
+
+    #[classmethod]
+    fn from_queries(_cls: &PyType, queries: Vec<PyQuery>) -> PyResult<PyHpoSet> {
+        let mut ids: Vec<HpoTermId> = Vec::with_capacity(queries.len());
+        for q in queries {
+            ids.push(term_from_query(q)?.id());
+        }
+        Ok(PhenoSet::build(ids))
+    }
+
+    #[classmethod]
+    fn from_serialized(_cls: &PyType, pickle: &str) -> PyResult<PyHpoSet> {
+        Ok(PhenoSet::build(
             pickle
                 .split('+')
                 .map(|id| id.parse::<u32>())

@@ -133,7 +133,8 @@ where
 {
     let disease = get_ontology()?
         .omim_disease(&OmimDiseaseId::from(enrichment.id().as_u32()))
-        .map(|d| PyOmimDisease::new(*d.id(), d.name().into())).unwrap();
+        .map(|d| PyOmimDisease::new(*d.id(), d.name().into()))
+        .unwrap();
     let dict = PyDict::new(py);
     dict.set_item("enrichment", enrichment.pvalue())?;
     dict.set_item("fold", enrichment.enrichment())?;
@@ -151,7 +152,8 @@ where
 {
     let gene = get_ontology()?
         .gene(&GeneId::from(enrichment.id().as_u32()))
-        .map(|g| PyGene::new(*g.id(), g.name().into())).unwrap();
+        .map(|g| PyGene::new(*g.id(), g.name().into()))
+        .unwrap();
     let dict = PyDict::new(py);
     dict.set_item("enrichment", enrichment.pvalue())?;
     dict.set_item("fold", enrichment.enrichment())?;
