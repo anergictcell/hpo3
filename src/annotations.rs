@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::hash::Hash;
 
 use pyo3::class::basic::CompareOp;
-use pyo3::exceptions::{PyTypeError, PyKeyError};
+use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::types::PyDict;
 use pyo3::{prelude::*, types::PyType};
 
@@ -240,8 +240,7 @@ impl PyOmimDisease {
     #[classmethod]
     fn get(_cls: &PyType, id: u32) -> PyResult<PyOmimDisease> {
         let ont = get_ontology()?;
-        ont
-            .omim_disease(&id.into())
+        ont.omim_disease(&id.into())
             .ok_or(PyKeyError::new_err("'No disease found for query'"))
             .map(|d| PyOmimDisease::new(*d.id(), d.name().into()))
     }
