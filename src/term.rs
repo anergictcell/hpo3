@@ -336,19 +336,23 @@ impl PyHpoTerm {
     ///
     /// IMPORTANT NOTE
     /// --------------
-    /// This method is not correctly implemented and will not return
+    /// This method is not correctly implemented: It will not return
     /// the sub-paths distances
     #[pyo3(text_signature = "($self, other)")]
     pub fn path_to_other(
         &self,
         other: &PyHpoTerm,
     ) -> PyResult<(usize, Vec<PyHpoTerm>, usize, usize)> {
-        let path = self
+        let mut path = self
             .hpo()
             .path_to_term(&other.into())
             .ok_or_else(|| PyRuntimeError::new_err("No path found"))?;
+        let len = path.len();
+        if !path.contains(&self.id) {
+            path.insert(0, self.id);
+        }
         Ok((
-            path.len(),
+            len,
             path.iter()
                 .map(|id| pyterm_from_id(id.as_u32()).expect("term must be part of Ontology"))
                 .collect(),
