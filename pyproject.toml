@@ -32,3 +32,4 @@ repository = "https://github.com/anergictcell/hpo3"
 
 [tool.maturin]
 include = ["ontology.hpo"]
+python-source = "python"

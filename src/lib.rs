@@ -132,78 +132,27 @@ pub enum TermOrId {
 /// This library aims to be a drop-in replacement for
 /// `pyhpo <https://pypi.org/project/pyhpo/>`_
 #[pymodule]
-fn pyhpo(py: Python, m: &PyModule) -> PyResult<()> {
+fn pyhpo(_py: Python, m: &PyModule) -> PyResult<()> {
     let ont = PyOntology::blank();
     m.add_class::<PyGene>()?;
     m.add_class::<PyOmimDisease>()?;
     m.add_class::<PyHpoSet>()?;
     m.add_class::<PyHpoTerm>()?;
+    m.add_class::<PyEnrichmentModel>()?;
+    m.add_function(wrap_pyfunction!(linkage::linkage, m)?)?;
     m.add("Ontology", ont)?;
     m.add("BasicHPOSet", set::BasicPyHpoSet::default())?;
+    m.add("HPOPhenoSet", set::PhenoSet::default())?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add("__backend__", env!("CARGO_PKG_NAME"))?;
-    register_helper_module(py, m)?;
-    register_stats_module(py, m)?;
-    register_set_module(py, m)?;
-    register_annotations_module(py, m)?;
+    m.add_function(wrap_pyfunction!(batch_similarity, m)?)?;
+    m.add_function(wrap_pyfunction!(batch_set_similarity, m)?)?;
+    m.add_function(wrap_pyfunction!(batch_gene_enrichment, m)?)?;
+    m.add_function(wrap_pyfunction!(batch_disease_enrichment, m)?)?;
     Ok(())
 }
 
-fn register_annotations_module(py: Python<'_>, parent_module: &PyModule) -> PyResult<()> {
-    let child_module = PyModule::new(py, "annotations")?;
-    child_module.add_class::<PyGene>()?;
-    child_module.add_class::<PyOmimDisease>()?;
-    parent_module.add_submodule(child_module)?;
-
-    py.import("sys")?
-        .getattr("modules")?
-        .set_item("pyhpo.annotations", child_module)?;
-
-    Ok(())
-}
-
-fn register_set_module(py: Python<'_>, parent_module: &PyModule) -> PyResult<()> {
-    let child_module = PyModule::new(py, "set")?;
-    child_module.add_class::<set::BasicPyHpoSet>()?;
-    child_module.add_class::<set::PyHpoSet>()?;
-    child_module.add_class::<set::PhenoSet>()?;
-    parent_module.add_submodule(child_module)?;
-
-    py.import("sys")?
-        .getattr("modules")?
-        .set_item("pyhpo.set", child_module)?;
-
-    Ok(())
-}
-
-fn register_helper_module(py: Python<'_>, parent_module: &PyModule) -> PyResult<()> {
-    let child_module = PyModule::new(py, "helper")?;
-    child_module.add_function(wrap_pyfunction!(batch_similarity, child_module)?)?;
-    child_module.add_function(wrap_pyfunction!(set_batch_similarity, child_module)?)?;
-    child_module.add_function(wrap_pyfunction!(batch_gene_enrichment, child_module)?)?;
-    child_module.add_function(wrap_pyfunction!(batch_disease_enrichment, child_module)?)?;
-    parent_module.add_submodule(child_module)?;
-
-    py.import("sys")?
-        .getattr("modules")?
-        .set_item("pyhpo.helper", child_module)?;
-    Ok(())
-}
-
-fn register_stats_module(py: Python<'_>, parent_module: &PyModule) -> PyResult<()> {
-    let child_module = PyModule::new(py, "stats")?;
-    child_module.add_class::<PyEnrichmentModel>()?;
-    child_module.add_function(wrap_pyfunction!(linkage::linkage, child_module)?)?;
-    parent_module.add_submodule(child_module)?;
-
-    py.import("sys")?
-        .getattr("modules")?
-        .set_item("pyhpo.stats", child_module)?;
-
-    Ok(())
-}
-
-/// Calculate similarity between `HPOSet`s in batches
+/// Calculate similarity between ``HPOSet`` in batches
 ///
 /// This method runs parallelized on all avaible CPU
 ///
@@ -219,12 +168,13 @@ fn register_stats_module(py: Python<'_>, parent_module: &PyModule) -> PyResult<(
 ///
 ///     gene_sets = [g.hpo_set() for g in Ontology.genes]
 ///     gene_set_combinations = [(a[0], a[1]) for a in itertools.combinations(gene_sets,2)]
-///     similarities = helper.set_batch_similarity(gene_set_combinations[0:100], kind="omim", method="graphic", combine = "funSimAvg")
+///     similarities = helper.batch_set_similarity(gene_set_combinations[0:100], kind="omim", method="graphic", combine = "funSimAvg")
+///
 ///
 #[pyfunction]
 #[pyo3(signature = (comparisons, kind = "omim", method = "graphic", combine = "funSimAvg"))]
 #[pyo3(text_signature = "(comparisons, kind, method, combine)")]
-fn set_batch_similarity(
+fn batch_set_similarity(
     comparisons: Vec<(PyHpoSet, PyHpoSet)>,
     kind: &str,
     method: &str,
