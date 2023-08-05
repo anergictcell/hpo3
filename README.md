@@ -24,7 +24,7 @@ hpo3 ships with a prebuilt HPO Ontology by default, so you can start right away.
 
 ## Examples
 
-There are also more examples in the [PyHPO documentation](https://centogene.github.io/pyhpo/):
+There are also more examples in the documentation of both [PyHPO](https://pyhpo.readthedocs.io/) and [hpo3](https://hpo3.readthedocs.io/)
 
 ```python
 from pyhpo import Ontology, HPOSet
