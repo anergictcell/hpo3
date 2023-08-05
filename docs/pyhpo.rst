@@ -13,14 +13,18 @@ Additional functionality:
 
 * :func:`pyhpo.HPOTerm.similarity_scores` : Calculate similarity to many other ``HPOTerm`` in parallel.
 * :func:`pyhpo.HPOSet.similarity_scores` : Calculate similarity to many other ``HPOSet`` in parallel.
-* linkage analysis
+* :func:`pyhpo.stats.linkage` : Cluster and linkage matrix analysis of ``HPOSet``\s for dendograms.
+* :func:`pyhpo.helper.batch_similarity` : Calculate similarity scores of ``HPOTerm``\s in parallel.
+* :func:`pyhpo.helper.batch_set_similarity` : Calculate similarity scores of ``HPOSet``\s in parallel.
+* :func:`pyhpo.helper.batch_disease_enrichment` : Calculate enrichment of diseases in many ``HPOSet``\s in parallel.
+* :func:`pyhpo.helper.batch_gene_enrichment` : Calculate enrichment of genes in many ``HPOSet``\s in parallel.
 
-Missing functionality:
-----------------------
+Missing or different functionality:
+-----------------------------------
 
-* Term - Orpha associations
-* Term - Decipher associations
-* custom Information content calculation
+* Association of Orpha diseases to ``HPOTerm``\s
+* Association of Decipher diseases to ``HPOTerm``\s
+* custom ``InformationContent`` calculations
 * ``HPOSet.combinations``
 * ``HPOSet.combinations_one_way``
 * ``HPOSet.variance``
