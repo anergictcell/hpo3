@@ -1,4 +1,4 @@
-
+=============
 :math:`HPO_3`
 =============
 
@@ -6,39 +6,55 @@
 
 .. toctree::
    :maxdepth: 1
-   :caption: Table of Contents:
+   :hidden:
+   :caption: Key concepts:
 
    getting_started
    ontology
    hpoterm
    hposet
    annotations
-   enrichment
+   stats
+   helper
+   pyhpo
+   api_changes
+
+
+Table of Contents
+=================
+
+* `HPO3`_
+* `Installation`_
+* `Examples`_
+* `Examples for multithreading`_
+* :doc:`pyhpo`
 
 HPO3
-----
+====
 
 :math:`HPO_3`. is a Python module to work with the Human Phenotype Ontology (HPO). It can calculate similarities between individual terms or between sets of terms. It can also calculate the enrichment of gene or disease associations to a set of HPO terms.
 
 This library aims to be a drop-in replacement for `pyhpo <https://pypi.org/project/pyhpo/>`_, but is written in Rust and thus much much faster. Batchwise operations can also utilize multithreading, increasing the performance even more.
 
-For a user guide and API description, you can check out the documentation of `pyhpo <https://pypi.org/project/pyhpo/>`_, the API is almost 100% identical.
+.. hint::
+   You can also check out the `documentation <https://pyhpo.readthedocs.io>`_ of `pyhpo <https://pypi.org/project/pyhpo/>`_, the API is almost 100% identical.
+
+   hpo3 does have some extra functionality in the :doc:`helper` module.
 
 Installation
-~~~~~~~~~~~~
-HPO3 is provided as binary wheels for most platforms on PyPI, so in most cases you can just run
+============
+**hpo3** is provided as binary wheels for most platforms on PyPI, so in most cases you can just run
 
 .. code-block:: bash
 
-   bash
    pip install hpo3
 
 (For macOS, only Python 3.10 and 3.11 are supported, for both x64 and arm at the moment.)
 
-hpo3 ships with a prebuilt HPO Ontology by default, so you can start right away.
+**hpo3** ships with a prebuilt HPO Ontology by default, so you can start right away.
 
 Examples
-~~~~~~~~
+========
 
 .. code-block:: python
 
@@ -110,15 +126,13 @@ Examples
    genes = gene_model.enrichment(method='hypergeom', hposet=patient_1)
 
    print(genes[0])
-   # >> {'enrichment': 5.729299915113426e-05, 'fold': 33.12427184466019, 'count': 3, 'item': 5351}
-
-   # get the `Gene` object from the `item` id field
-   gene = Gene.get(genes[0]["item"])
-   gene.name
-   # >> 'PLOD1'
+   # >> {'enrichment': 5.453829934109905e-05, 'fold': 33.67884615384615, 'count': 3, 'item': <Gene (PLOD1)>}
 
 
-`HPO3` shines even more when it comes to batchwise operations:
+Examples for multithreading
+===========================
+
+**hpo3** shines even more when it comes to batchwise operations:
 
 
 **Calculate the pairwise similarity of the HPOSets from all genes**
@@ -193,6 +207,13 @@ Examples
    enrichments = helper.batch_disease_enrichment(gene_sets)
    print(f"The most enriched disease for {genes[0]} is {enrichments[0][0]}")
 
+   # >> The most enriched disease for 730 | C7 is {
+   # >>     'enrichment': 3.6762699175625894e-42,
+   # >>     'fold': 972.9444444444443,
+   # >>     'count': 13,
+   # >>     'item': <OmimDisease (610102)>
+   # >> }
+
 
 **Or vice versa (genes enriched for every disease)**
 
@@ -209,3 +230,10 @@ Examples
 
    enrichments = helper.batch_gene_enrichment(disease_sets)
    print(f"The most enriched gene for {diseases[0]} is {enrichments[0][0]}")
+
+   # >> The most enriched gene for 619510 | Immunodeficiency 85 and autoimmunity is {
+   # >>     'enrichment': 7.207370728788139e-45,
+   # >>     'fold': 66.0867924528302,
+   # >>     'count': 24,
+   # >>     'item': <Gene (TOM1)>
+   # >> }

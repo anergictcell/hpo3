@@ -1,17 +1,17 @@
 # HPO3
 
-`HPO3` is a Rust based drop-in replacement of [`PyHPO`](https://pypi.org/project/pyhpo/). It is based on the [`hpo`](https://crates.io/crates/hpo) Rust library which is a performance optimzied implementation of `PyHPO`.
+`hpo3` is a Rust based drop-in replacement of [`PyHPO`](https://pypi.org/project/pyhpo/). It is based on the [`hpo`](https://crates.io/crates/hpo) Rust library which is a performance optimzied implementation of `PyHPO`.
 
 Using the Rust-based `hpo` library increases performance easily 100 fold for many operations. It enables developers to utilize multithreading, further improving performance greatly.
 
-`HPO3` aims to use the exact same API and methods as PyHPO to allow a very simple replacement for all analysis and statistics methods. However, it does not allow customization and modification of the ontology or individual terms, genes etc.
+`hpo3` aims to use the exact same API and methods as PyHPO to allow a very simple replacement for all analysis and statistics methods. However, it does not allow customization and modification of the ontology or individual terms, genes etc.
 
 ## Current status
 Most functionality of PyHPO is present and working, giving correct results. Similarity calculations and hypergeometric enrichment scores are implemented and working both for single terms and for HPOSets.
 
 There are some helper functions for parallel batchwise processing, which are amazing if you plan on analyzing large datasets.
 
-If you need performance and speed for rapid experiments, give `HPO3` a try.
+If you need performance and speed for rapid experiments, give `hpo3` a try.
 
 ## Installation
 HPO3 is provided as binary wheels for most platforms on PyPI, so in most cases you can just run
@@ -117,8 +117,7 @@ HP:0040064 | Abnormality of limbs
 
 
 ## Documentation
-I'm in the process adding proper documentation, but the process is not yet that far. You can check in python by using `help(Ontology)` or `help(methodname)` to get some documentation.
-Otherwise, use the [PyHPO documentation](https://centogene.github.io/pyhpo/) for now.
+Check out the [hpo3 documentation](https://hpo3.readthedocs.io/en/latest/)
 
 ## Parallel processing
 `hpo3` is using Rust as backend, so it's able to fully utilize parallel processing. To benefit from this even greater, `hpo3` provides some special helper functions for parallel batch processing in the `helper` submodule

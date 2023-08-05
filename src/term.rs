@@ -84,7 +84,7 @@ impl PyHpoTerm {
     ///     from pyhpo import Ontology
     ///     Ontology()
     ///     term = Ontology.hpo(11968)
-    ///     term.id()    # ==> 'HP:0011968'
+    ///     term.id    # >> 'HP:0011968'
     ///
     #[getter(id)]
     fn id(&self) -> String {
@@ -101,7 +101,7 @@ impl PyHpoTerm {
     ///     from pyhpo import Ontology
     ///     Ontology()
     ///     term = Ontology.hpo(11968)
-    ///     term.name()  # ==> 'Feeding difficulties'
+    ///     term.name  # >> 'Feeding difficulties'
     ///
     #[getter(name)]
     fn name(&self) -> &str {
@@ -118,15 +118,15 @@ impl PyHpoTerm {
     ///     from pyhpo import Ontology
     ///     Ontology()
     ///     term = Ontology.hpo(11968)
-    ///     term.information_content.omim  # ==> 2.5363943576812744
-    ///     term.information_content.gene  # ==> 1.457185983657837
+    ///     term.information_content.omim  # >> 2.5363943576812744
+    ///     term.information_content.gene  # >> 1.457185983657837
     ///
     #[getter(information_content)]
     fn information_content(&self) -> PyInformationContent {
         self.hpo().information_content().into()
     }
 
-    /// A list of direct parents
+    /// A set of direct parents
     ///
     /// Examples
     /// --------
@@ -136,7 +136,7 @@ impl PyHpoTerm {
     ///     from pyhpo import Ontology
     ///     Ontology()
     ///     term = Ontology.hpo(108)
-    ///     term.parents  # ==> {<HpoTerm (HP:0011035)>, <HpoTerm (HP:0000107)>, <HpoTerm (HP:0100957)>}
+    ///     term.parents  # >> {<HpoTerm (HP:0011035)>, <HpoTerm (HP:0000107)>, <HpoTerm (HP:0100957)>}
     ///
     #[getter(parents)]
     fn parents(&self) -> HashSet<PyHpoTerm> {
@@ -149,7 +149,7 @@ impl PyHpoTerm {
         })
     }
 
-    /// A list of all parents
+    /// A set of all parents
     ///
     /// Examples
     /// --------
@@ -159,7 +159,7 @@ impl PyHpoTerm {
     ///     from pyhpo import Ontology
     ///     Ontology()
     ///     term = Ontology.hpo(108)
-    ///     term.all_parents  # ==> {large set}
+    ///     term.all_parents  # >> {large set}
     ///
     #[getter(all_parents)]
     fn all_parents(&self) -> HashSet<PyHpoTerm> {
@@ -174,7 +174,7 @@ impl PyHpoTerm {
             })
     }
 
-    /// A list of direct children
+    /// A set of direct children
     ///
     /// Examples
     /// --------
@@ -184,7 +184,7 @@ impl PyHpoTerm {
     ///     from pyhpo import Ontology
     ///     Ontology()
     ///     term = Ontology.hpo(1)
-    ///     term.children  # ==> {<HpoTerm (HP:0000005)>, <HpoTerm (HP:0000118)>, <HpoTerm (HP:0012823)>, <HpoTerm (HP:0032443)>, <HpoTerm (HP:0040279)>, <HpoTerm (HP:0032223)>}
+    ///     term.children  # >> {<HpoTerm (HP:0000005)>, <HpoTerm (HP:0000118)>, <HpoTerm (HP:0012823)>, <HpoTerm (HP:0032443)>, <HpoTerm (HP:0040279)>, <HpoTerm (HP:0032223)>}
     ///
     #[getter(children)]
     fn children(&self) -> HashSet<PyHpoTerm> {
@@ -197,7 +197,7 @@ impl PyHpoTerm {
         })
     }
 
-    /// A list of associated genes
+    /// Returns a set of associated genes
     ///
     /// The list includes "inherited" genes that are not directly
     /// linked to the term, but to one of its children
@@ -221,7 +221,7 @@ impl PyHpoTerm {
         })
     }
 
-    /// A list of associated OMIM diseases
+    /// Returns a set of associated OMIM diseases
     ///
     /// The list includes "inherited" diseases that are not directly
     /// linked to the term, but to one of its children
@@ -234,7 +234,7 @@ impl PyHpoTerm {
     ///     from pyhpo import Ontology
     ///     Ontology()
     ///     term = Ontology.hpo(188)
-    ///     for disease in term.diseases:
+    ///     for disease in term.omim_diseases:
     ///         print(disease.name)
     ///
     #[getter(omim_diseases)]
@@ -269,21 +269,118 @@ impl PyHpoTerm {
             .collect()
     }
 
+    /// Returns true if the term is a parent of ``other``
+    ///
+    /// Parameters
+    /// ----------
+    /// other: :class:`HPOTerm`
+    ///     The other HPOTerm
+    ///
+    /// Returns
+    /// -------
+    /// bool
+    ///     Whether the term is a parent of ``other``
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     term = Ontology[10049]
+    ///     term2 = Ontology[118]
+    ///
+    ///     term2.parent_of(term)
+    ///     # >> True
+    ///
     #[pyo3(text_signature = "($self, other)")]
     fn parent_of(&self, other: &PyHpoTerm) -> bool {
         self.hpo().parent_of(&other.hpo())
     }
 
+    /// Returns true if the term is a child of ``other``
+    ///
+    /// Parameters
+    /// ----------
+    /// other: :class:`HPOTerm`
+    ///     The other HPOTerm
+    ///
+    /// Returns
+    /// -------
+    /// bool
+    ///     Whether the term is a child of ``other``
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     term = Ontology[10049]
+    ///     term2 = Ontology[118]
+    ///
+    ///     term.child_of(term2)
+    ///     # >> True
+    ///
     #[pyo3(text_signature = "($self, other)")]
     fn child_of(&self, other: &PyHpoTerm) -> bool {
         self.hpo().child_of(&other.hpo())
     }
 
+    /// Returns a list of all direct parent's HPO-IDs
+    ///
+    /// Returns
+    /// -------
+    /// List[int]
+    ///     A list of ``int`` representations of the parent
+    ///     terms
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     term = Ontology[10049]
+    ///
+    ///     term.parent_ids()
+    ///     # >> [3026, 5914]
+    ///
     #[pyo3(text_signature = "($self)")]
     fn parent_ids(&self) -> Vec<u32> {
         self.hpo().parent_ids().iter().map(|t| t.as_u32()).collect()
     }
 
+    /// Returns common ancestor ``HPOTerm``
+    ///
+    /// Parameters
+    /// ----------
+    /// other: :class:`HPOTerm`
+    ///     The other HPOTerm
+    ///
+    /// Returns
+    /// -------
+    /// set[:class:`HPOTerm`]
+    ///     All terms that are common ancestors
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     term = Ontology[2650]
+    ///     term2 = Ontology[9121]
+    ///
+    ///     term.common_ancestors(term2)
+    ///     # >> {<HpoTerm (HP:0000001)>, <HpoTerm (HP:0011842)>,
+    ///     # >> <HpoTerm (HP:0033127)>, <HpoTerm (HP:0000118)>,
+    ///     # >> <HpoTerm (HP:0000924)>}
+    ///
     #[pyo3(text_signature = "($self, other)")]
     fn common_ancestors(&self, other: &PyHpoTerm) -> HashSet<PyHpoTerm> {
         self.hpo()
@@ -295,11 +392,45 @@ impl PyHpoTerm {
             })
     }
 
+    /// Returns the number of direct parents of the term
+    ///
+    /// Returns
+    /// -------
+    /// int
+    ///     The number of parents of the term
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     Ontology[100490].count_parents()
+    ///     # >> 3
+    ///
     #[pyo3(text_signature = "($self)")]
     fn count_parents(&self) -> usize {
         self.hpo().parent_ids().len()
     }
 
+    /// Returns the number of terms between self and the root term
+    ///
+    /// Returns
+    /// -------
+    /// int
+    ///     The number of terms between self and the root term
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     Ontology[100490].shortest_path_to_root()
+    ///     # >> 8
+    ///
     #[pyo3(text_signature = "($self)")]
     fn shortest_path_to_root(&self) -> usize {
         let root = term_from_id(1).expect("the root must exist");
@@ -308,13 +439,47 @@ impl PyHpoTerm {
             .expect("the root term must be an ancestor")
     }
 
-    #[pyo3(text_signature = "($self, other)")]
     /// Calculates the shortest path to an ancestor HPO Term
     ///
     /// If `other` is not a parent term, the distance will be `Inf`.
     ///
     /// As a minor difference to `PyHPO`, this method does not return
     /// a Tuple, but a list of terms.
+    ///
+    /// Parameters
+    /// ----------
+    /// other: :class:`HPOTerm`
+    ///     The other HPOTerm
+    ///
+    /// Returns
+    /// -------
+    /// float
+    ///     The number of terms between self and the other term.
+    ///     If ``other`` is not a parent, it returns ``Inf``
+    /// List[:class:`HPOTerm`]
+    ///     The terms between self and ``other``
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     term = Ontology[100490]
+    ///     term2 = Ontology[1]
+    ///     term.shortest_path_to_parent(term2)
+    ///     # >> (
+    ///     # >>    8.0,
+    ///     # >>    [
+    ///     # >>        <HpoTerm (HP:0006261)>, <HpoTerm (HP:0005918)>,
+    ///     # >>        <HpoTerm (HP:0001167)>, <HpoTerm (HP:0001155)>,
+    ///     # >>        <HpoTerm (HP:0002817)>, <HpoTerm (HP:0040064)>,
+    ///     # >>        <HpoTerm (HP:0000118)>, <HpoTerm (HP:0000001)>
+    ///     # >>    ]
+    ///     # >> )
+    ///
+    #[pyo3(text_signature = "($self, other)")]
     fn shortest_path_to_parent(&self, other: &PyHpoTerm) -> (f32, Vec<PyHpoTerm>) {
         let path = if let Some(path) = self.hpo().path_to_ancestor(&other.into()) {
             path
@@ -334,21 +499,60 @@ impl PyHpoTerm {
 
     /// Calculates the shortest path to another HPO Term
     ///
-    /// IMPORTANT NOTE
-    /// --------------
-    /// This method is not correctly implemented and will not return
-    /// the sub-paths distances
+    /// .. note::
+    ///
+    ///     This method is not correctly implemented: It will always return
+    ///     ``0`` for the sub-paths distances.
+    ///
+    /// Parameters
+    /// ----------
+    /// other: :class:`HPOTerm`
+    ///     The other HPOTerm
+    ///
+    /// Returns
+    /// -------
+    /// int
+    ///     The number of terms between self and the other term
+    ///     (excluding ``self``, but including ``other``)
+    /// List[:class:`HPOTerm`]
+    ///     The terms between and including ``self`` and ``other``
+    /// int
+    ///     Always ``0``
+    /// int
+    ///     Always ``0``
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     term = Ontology[40064]
+    ///     term2 = Ontology[769]
+    ///     term.path_to_other(term2)
+    ///     # >> (
+    ///     # >>    2,
+    ///     # >>    [<HpoTerm (HP:0040064)>, <HpoTerm (HP:0000118)>, <HpoTerm (HP:0000769)>],
+    ///     # >>    0,
+    ///     # >>    0
+    ///     # >> )
+    ///
     #[pyo3(text_signature = "($self, other)")]
     pub fn path_to_other(
         &self,
         other: &PyHpoTerm,
     ) -> PyResult<(usize, Vec<PyHpoTerm>, usize, usize)> {
-        let path = self
+        let mut path = self
             .hpo()
             .path_to_term(&other.into())
             .ok_or_else(|| PyRuntimeError::new_err("No path found"))?;
+        let len = path.len();
+        if !path.contains(&self.id) {
+            path.insert(0, self.id);
+        }
         Ok((
-            path.len(),
+            len,
             path.iter()
                 .map(|id| pyterm_from_id(id.as_u32()).expect("term must be part of Ontology"))
                 .collect(),
@@ -359,11 +563,11 @@ impl PyHpoTerm {
 
     /// Calculates the similarity score of two HPO Terms
     ///
-    /// Arguments
-    /// ---------
-    /// other: `int`
-    ///     ID of the other term as `int` (`HP:0000123` --> `123`)
-    /// kind: `str`, default: `omim`
+    /// Parameters
+    /// ----------
+    /// other: :class:`HPOTerm`
+    ///     The other HPOTerm
+    /// kind: str, default: ``omim``
     ///     Which kind of information content to use for similarity calculation
     ///     
     ///     Available options:
@@ -391,7 +595,7 @@ impl PyHpoTerm {
     ///
     /// Returns
     /// -------
-    /// `float`
+    /// float
     ///     The similarity score
     ///
     /// Examples
@@ -427,11 +631,11 @@ impl PyHpoTerm {
     /// This method is useful if you want to compare the term to **thousands** of other terms.
     /// It will utilize all avaible CPU for parallel processing.
     ///
-    /// Arguments
-    /// ---------
-    /// others: `List[int]`
-    ///     ID of the other term as `int` (`HP:0000123` --> `123`)
-    /// kind: `str`, default: `omim`
+    /// Parameters
+    /// ----------
+    /// others: List[:class:`HPOTerm`]
+    ///     Lost of ``HPOTerm`` to calculate similarity to
+    /// kind: str, default: ``omim``
     ///     Which kind of information content to use for similarity calculation
     ///
     ///     Available options:
@@ -439,7 +643,7 @@ impl PyHpoTerm {
     ///     * **omim**
     ///     * **gene**
     ///
-    /// method: `str`, default `graphic`
+    /// method: str, default graphic
     ///     The method to use to calculate the similarity.
     ///
     ///     Available options:
@@ -459,7 +663,7 @@ impl PyHpoTerm {
     ///
     /// Returns
     /// -------
-    /// `List[float]`
+    /// List[float]
     ///     The similarity scores
     ///
     /// Examples
@@ -499,6 +703,66 @@ impl PyHpoTerm {
             .collect())
     }
 
+    /// Returns a dict/JSON representation the HPOTerm
+    ///
+    /// Parameters
+    /// ----------
+    /// verbose: bool
+    ///     if extra attributes should be included
+    ///
+    /// Returns
+    /// -------
+    /// Dict
+    ///     Dict representation of the ``HPOTerm`` with the following keys:
+    ///
+    ///     * **name** : `str`
+    ///         The name of the HPO term
+    ///     * **id** : `str`
+    ///         The HPO term ID e.g.: ``HP:0000265``
+    ///     * **int** : `int`
+    ///         Integer of the term ID, e.g.: ``265``
+    ///     * **synonym** : `list[str]`
+    ///         Not implemented, will always be ``[]``
+    ///     * **comment** : `str`
+    ///         Not implemented, will always be ``""``
+    ///     * **definition** : `str`
+    ///         Not implemented, will always be ``""``
+    ///     * **xref** : `list[str]`
+    ///         Not implemented, will always be ``[]``
+    ///     * **is_a** : `list[str]`
+    ///         Not implemented, will always be ``[]``
+    ///     * **ic** : `dict[str, float]`
+    ///         The information content scores, see :class:`pyhpo.InformationContent`
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     term = Ontology[118]
+    ///     term.toJSON()
+    ///     # >> {'name': 'Phenotypic abnormality', 'id': 'HP:0000118', 'int': 118}
+    ///
+    ///     Ontology[265].toJSON(True)
+    ///     # >> {
+    ///     # >>     'name': 'Mastoiditis',
+    ///     # >>     'id': 'HP:0000265',
+    ///     # >>     'int': 265,
+    ///     # >>     'synonym': [],
+    ///     # >>     'comment': '',
+    ///     # >>     'definition': '',
+    ///     # >>     'xref': [],
+    ///     # >>     'is_a': [],
+    ///     # >>     'ic': {
+    ///     # >>         'gene': 6.7086944580078125,
+    ///     # >>         'omim': 7.392647743225098,
+    ///     # >>         'orpha': 0.0,
+    ///     # >>         'decipher': 0.0
+    ///     # >>     }
+    ///     # >> }
+    ///
     #[pyo3(signature = (verbose = false))]
     #[pyo3(text_signature = "($self, verbose)")]
     #[allow(non_snake_case)]

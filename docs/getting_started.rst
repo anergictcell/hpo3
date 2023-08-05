@@ -56,5 +56,5 @@ manually:
 .. code-block:: python
 
     from pyhpo import Ontology
-    Ontology("/path/to/folder/with/ontology", binary=False)
+    Ontology("/path/to/folder/with/ontology/")
 

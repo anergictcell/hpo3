@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::hash::Hash;
 
 use pyo3::class::basic::CompareOp;
-use pyo3::exceptions::{PyTypeError, PyKeyError};
+use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::types::PyDict;
 use pyo3::{prelude::*, types::PyType};
 
@@ -31,6 +31,11 @@ impl PythonAnnotation for PyGene {}
 impl PyGene {
     /// Returns the Gene Id
     ///
+    /// Returns
+    /// -------
+    /// int
+    ///     The HGNC-ID
+    ///
     /// Examples
     /// --------
     ///
@@ -38,15 +43,21 @@ impl PyGene {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     gene = Ontology.genes()[0]
-    ///     gene.id()    # ==> 11212
+    ///     gene = list(Ontology.genes[0]
+    ///     gene.id
+    ///     # >> 11212
     ///
     #[getter(id)]
     pub fn id(&self) -> u32 {
         self.id.as_u32()
     }
 
-    /// Returns the name of the HPO Term
+    /// Returns the gene symbol
+    ///
+    /// Returns
+    /// -------
+    /// str
+    ///     The gene symbol
     ///
     /// Examples
     /// --------
@@ -55,8 +66,8 @@ impl PyGene {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     gene = Ontology.genes()[0]
-    ///     gene.name()
+    ///     gene = list(Ontology.genes[0]
+    ///     gene.name
     ///     # >> 'BRCA2'
     ///
     #[getter(name)]
@@ -64,6 +75,24 @@ impl PyGene {
         &self.name
     }
 
+    /// Returns the IDs of all associated ``HPOTerm``
+    ///
+    /// Returns
+    /// -------
+    /// set(int)
+    ///     A set of integers, representing the HPO-IDs
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     gene = list(Ontology.genes[0]
+    ///     gene.hpo
+    ///     # >> {3077, 7, 7703, 2073, 2075, 30236, .....}
+    ///
     #[getter(hpo)]
     pub fn hpo(&self) -> PyResult<HashSet<u32>> {
         let ont = get_ontology()?;
@@ -78,10 +107,57 @@ impl PyGene {
             }))
     }
 
+    /// Returns a ``HPOSet`` of all associated ``HPOTerm``
+    ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.HPOSet`
+    ///     An ``HPOSet`` containing all associated ``HPOTerm``
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     gene = list(Ontology.genes[0]
+    ///     gene.hpo_set()
+    ///     # >> HPOSet.from_serialized(7+118+152+234+271+315, ....)
+    ///
     fn hpo_set(&self) -> PyResult<PyHpoSet> {
         PyHpoSet::try_from(self)
     }
 
+    /// Returns a gene that matches the provided query
+    ///
+    /// Paramaters
+    /// ----------
+    /// query: str or int
+    ///     A gene symbol of HGNC-ID
+    ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.Gene`
+    ///     A ``Gene``
+    ///
+    /// Raises
+    /// ------
+    /// KeyError: No gene found for the query
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology, Gene
+    ///     Ontology()
+    ///     Gene.get("BRCA2")
+    ///     # >> Gene (BRCA2)>
+    ///
+    ///     Gene.get(2629)
+    ///     # >> <Gene (GBA1)>
+    ///
     #[classmethod]
     fn get(_cls: &PyType, query: PyQuery) -> PyResult<PyGene> {
         let ont = get_ontology()?;
@@ -97,6 +173,28 @@ impl PyGene {
         }
     }
 
+    /// Returns a dict/JSON representation the Gene
+    ///
+    /// Parameters
+    /// ----------
+    /// verbose: bool
+    ///     Indicates if all associated ``HPOTerm`` should be included in the output
+    ///
+    /// Returns
+    /// -------
+    /// Dict
+    ///     Dict representation of the gene
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology, Gene
+    ///     Ontology()
+    ///     Gene.get("BRCA2").toJSON()
+    ///     # >> {'name': 'BRCA2', 'id': 675, 'symbol': 'BRCA2'}
+    ///
     #[pyo3(signature = (verbose = false))]
     #[pyo3(text_signature = "($self, verbose)")]
     #[allow(non_snake_case)]
@@ -189,6 +287,11 @@ impl PythonAnnotation for PyOmimDisease {}
 impl PyOmimDisease {
     /// Returns the OmimDisease Id
     ///
+    /// Returns
+    /// -------
+    /// int
+    ///     The Omim-ID
+    ///
     /// Examples
     /// --------
     ///
@@ -196,15 +299,15 @@ impl PyOmimDisease {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     gene = Ontology.omim_diseases()[0]
-    ///     gene.id    # ==> 41232
+    ///     disease = list(Ontology.omim_diseases)[0]
+    ///     disease.id    # ==> 183849
     ///
     #[getter(id)]
     pub fn id(&self) -> u32 {
         self.id.as_u32()
     }
 
-    /// Returns the name of the HPO Term
+    /// Returns the name of the disease
     ///
     /// Examples
     /// --------
@@ -213,14 +316,33 @@ impl PyOmimDisease {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     gene = Ontology.omim_diseases()[0]
-    ///     gene.name  # ==> 'Gaucher'
+    ///     disease = list(Ontology.omim_diseases)[0]
+    ///     gene.name  # ==> 'Spondyloepimetaphyseal dysplasia with hypotrichosis'
     ///
     #[getter(name)]
     pub fn name(&self) -> &str {
         &self.name
     }
 
+    /// Returns the IDs of all associated ``HPOTerm``
+    ///
+    /// Returns
+    /// -------
+    /// set(int)
+    ///     A set of integers, representing the HPO-IDs
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     disease = list(Ontology.omim_diseases)[0]
+    ///     disease.hpo
+    ///     # >> {100864, 5090, 4581, 6, 2663, 3911, 6599, ...}
+    ///
     #[getter(hpo)]
     pub fn hpo(&self) -> PyResult<HashSet<u32>> {
         let ont = get_ontology()?;
@@ -233,19 +355,84 @@ impl PyOmimDisease {
         ))
     }
 
+    /// Returns a ``HPOSet`` of all associated ``HPOTerm``
+    ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.HPOSet`
+    ///     An ``HPOSet`` containing all associated ``HPOTerm``
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     disease = list(Ontology.omim_diseases)[0]
+    ///     disease.hpo_set()
+    ///     # >> HPOSet.from_serialized(6+2651+2663+2812+2834+2869, ..._
+    ///
     fn hpo_set(&self) -> PyResult<PyHpoSet> {
         PyHpoSet::try_from(self)
     }
 
+    /// Returns a gene that matches the provided query
+    ///
+    /// Paramaters
+    /// ----------
+    /// query: int
+    ///     An Omim ID
+    ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.Omim`
+    ///     A ``Omim``
+    ///
+    /// Raises
+    /// ------
+    /// KeyError: No disease found for the query
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology, Omim
+    ///     Ontology()
+    ///     Omim.get(183849)
+    ///     # >> <OmimDisease (183849)>
+    ///
     #[classmethod]
     fn get(_cls: &PyType, id: u32) -> PyResult<PyOmimDisease> {
         let ont = get_ontology()?;
-        ont
-            .omim_disease(&id.into())
+        ont.omim_disease(&id.into())
             .ok_or(PyKeyError::new_err("'No disease found for query'"))
             .map(|d| PyOmimDisease::new(*d.id(), d.name().into()))
     }
 
+    /// Returns a dict/JSON representation the Omim disease
+    ///
+    /// Parameters
+    /// ----------
+    /// verbose: bool
+    ///     Indicates if all associated ``HPOTerm`` should be included in the output
+    ///
+    /// Returns
+    /// -------
+    /// Dict
+    ///     Dict representation of the Omim disease
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology, Omim
+    ///     Ontology()
+    ///     Omim.get(183849).toJSON()
+    ///     # >> {'name': 'Spondyloepimetaphyseal dysplasia with hypotrichosis', 'id': 183849}
+    ///
     #[pyo3(signature = (verbose = false))]
     #[pyo3(text_signature = "($self, verbose)")]
     #[allow(non_snake_case)]

@@ -73,5 +73,3 @@ _build/
 .python-version
 
 Cargo.lock
-
-pyhpo/

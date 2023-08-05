@@ -10,11 +10,11 @@ The `Ontology` must be instantiated once in every running program. This loads al
 
 Arguments
 ~~~~~~~~~
-path: str
+data_folder: str
     Path to the source files (default: `None`)
     Leave blank to load the builtin Ontology (recommended)
-binary: bool
-    Whether the input format is binary (default `true`)
+from_obo_file: bool
+    Whether the input format is the standard from Jax HPO (default `True`)
 
 Examples
 ~~~~~~~~
@@ -30,6 +30,11 @@ Examples
     term.id()    # ==> 'HP:0011968'
     int(tern)    # ==> 11968
 
+    # Altenatively, you can use direct access to HPOTerms:
+
+    term = Ontology[11968]
+    # ...
+
 
 The following code with multiple modules works, because the Ontology must only be loaded once:
 
@@ -42,7 +47,7 @@ The following code with multiple modules works, because the Ontology must only b
     import submodule
     from submodule import foo
     
-    Ontology("path/to/ontology.hpo")
+    Ontology()
     
     foo()
     submodule.bar()
@@ -66,11 +71,12 @@ Attributes
 .. autoattribute:: pyhpo.Ontology.__class__.genes
 .. autoattribute:: pyhpo.Ontology.__class__.omim_diseases
 
+
 Methods
 -------
-.. autofunction:: pyhpo.Ontology.__class__.__call__
 .. autofunction:: pyhpo.Ontology.__class__.get_hpo_object
 .. autofunction:: pyhpo.Ontology.__class__.match
 .. autofunction:: pyhpo.Ontology.__class__.path
 .. autofunction:: pyhpo.Ontology.__class__.search
 .. autofunction:: pyhpo.Ontology.__class__.hpo
+.. autofunction:: pyhpo.Ontology.__class__.version
