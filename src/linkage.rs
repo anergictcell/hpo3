@@ -8,30 +8,27 @@ use hpo::HpoSet;
 
 use crate::{get_ontology, information_content::PyInformationContentKind, set::PyHpoSet};
 
-#[pyfunction]
-#[pyo3(signature = (sets, method = "single", kind = "omim", similarity_method = "graphic", combine = "funSimAvg"))]
-#[pyo3(text_signature = "(comparisons, method, kind, similarity_method, combine)")]
-/// Crate a linkage matrix from a list of `HpoSet`s to use in dendograms
+/// Crate a linkage matrix from a list of ``HpoSet``\s to use in dendograms
 /// or other hierarchical cluster analyses
 ///
 ///
 /// Arguments
 /// ---------
-/// sets: List[`HPOSet`]
-///     The `HPOSet`s for which the linkage should be calculated
-/// method: `str`, default: `single`
+/// sets: list[:class:`pyhpo.HPOSet`]
+///     The ``HPOSet``\s for which the linkage should be calculated
+/// method: `str`, default: ``single``
 ///     The algorithm to use for clustering
 ///     
 ///     Available options:
 ///
-///     * **single**: The minimum distance of each cluster's nodes to the other
+///     * **single** : The minimum distance of each cluster's nodes to the other
 ///       nodes is used as distance for newly formed clusters. This is also known as the Nearest Point Algorithm.
-///     * **union**: Create a new `HpoSet` for each cluster based on the union of
+///     * **union** : Create a new `HpoSet` for each cluster based on the union of
 ///       both combined clusters. This method becomes slow with growing input data
-///     * **complete**: The maximum distance of each cluster's nodes to the other
+///     * **complete** : The maximum distance of each cluster's nodes to the other
 ///       nodes is used as distance for newly formed clusters. This is also known by the Farthest Point Algorithm
 ///       or Voor Hees Algorithm.
-///     * **average**: The mean distance of each cluster's nodes to the other
+///     * **average** : The mean distance of each cluster's nodes to the other
 ///       nodes is used as distance for newly formed clusters. This is also called the UPGMA algorithm.
 ///
 /// kind: `str`, default: `omim`
@@ -78,7 +75,7 @@ use crate::{get_ontology, information_content::PyInformationContentKind, set::Py
 ///     Ontology()
 ///
 ///     # Using 100 diseases and creating a Tuple of (Disease Name, HPOSet) for each
-///     diseases = [(d.name, HPOSet(list(d.hpo)).remove_modifier()) for d in Ontology.omim_diseases[0:100]]
+///     diseases = [(d.name, HPOSet(list(d.hpo)).remove_modifier()) for d in list(Ontology.omim_diseases)[0:100]]
 ///
 ///     # Creating one list with all HPOSets
 ///     disease_sets = [d[1] for d in diseases[0:100]]
@@ -93,6 +90,9 @@ use crate::{get_ontology, information_content::PyInformationContentKind, set::Py
 ///
 ///     scipy.cluster.hierarchy.dendrogram(lnk)
 ///
+#[pyfunction]
+#[pyo3(signature = (sets, method = "single", kind = "omim", similarity_method = "graphic", combine = "funSimAvg"))]
+#[pyo3(text_signature = "(sets, method, kind, similarity_method, combine)")]
 pub(crate) fn linkage(
     sets: Vec<PyHpoSet>,
     method: &str,

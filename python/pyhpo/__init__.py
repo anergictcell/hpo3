@@ -10,7 +10,7 @@ from pyhpo.pyhpo import __backend__
 
 from pyhpo import annotations
 from pyhpo import stats
-import pyhpo.set
+# import pyhpo.set
 from pyhpo import helper
 
 __all__ = (

@@ -66,6 +66,27 @@ impl PyHpoSet {
         Self { ids }
     }
 
+    /// Add an HPOTerm to the HPOSet
+    ///
+    /// Parameters
+    /// ----------
+    /// term: :class:`HPOTerm` or int
+    ///     The term to add, either as actual ``HPOTerm``
+    ///     or the integer representation
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology, HPOSet
+    ///     Ontology()
+    ///     my_set = HPOSet([])
+    ///     my_set.add(Ontology[118])
+    ///     len(my_set) # >> 1
+    ///     my_set.add(2650)
+    ///     len(my_set) # >> 2
+    ///
     fn add(&mut self, term: TermOrId) {
         match term {
             TermOrId::Id(x) => self.ids.insert(x),
@@ -73,11 +94,71 @@ impl PyHpoSet {
         };
     }
 
+    /// Returns a new HPOSet that does not contain ancestor terms
+    ///
+    /// If a set contains HPOTerms that are ancestors of other
+    /// terms in the set, they will be removed. This method is useful
+    /// to create a set that contains only the most specific terms.
+    ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.HPOSet`
+    ///     A new ``HPOSet`` that contains only the most specific terms
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology, HPOSet
+    ///
+    ///     my_set = HPOSet.from_queries([
+    ///         'HP:0002650',
+    ///         'HP:0010674',
+    ///         'HP:0000925',
+    ///         'HP:0009121'
+    ///     ])
+    ///     
+    ///     child_set = my_set.child_nodes()
+    ///     
+    ///     len(my_set) # >> 4
+    ///     len(child_set) # >> 1
+    ///
     fn child_nodes(&self) -> PyResult<Self> {
         let ont = get_ontology()?;
         Ok(HpoSet::new(ont, self.ids.clone()).child_nodes().into())
     }
 
+    /// Returns a new HPOSet that does not contain any modifier terms
+    ///
+    /// This method removes all terms that are not children of
+    /// ``HP:0000118 | Phenotypic abnormality``
+    ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.HPOSet`
+    ///     A new ``HPOSet`` that contains only phenotype terms
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology, HPOSet
+    ///
+    ///     my_set = HPOSet.from_queries([
+    ///         'HP:0002650',
+    ///         'HP:0010674',
+    ///         'HP:0000925',
+    ///         'HP:0009121',
+    ///         'HP:0012823',
+    ///     ])
+    ///     
+    ///     pheno_set = my_set.remove_modifier()
+    ///     
+    ///     len(my_set) # >> 5
+    ///     len(pheno_set) # >> 4
+    ///
     fn remove_modifier(&self) -> PyResult<Self> {
         let ont = get_ontology()?;
         let mut new_set = HpoSet::new(ont, self.ids.clone());
@@ -85,6 +166,43 @@ impl PyHpoSet {
         Ok(new_set.into())
     }
 
+    /// Returns a new HPOSet that replaces all obsolete terms with
+    /// their replacement
+    ///
+    /// If an obsolete term has a replacement term defined
+    /// it will be replaced, otherwise it will be removed.
+    ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.HPOSet`
+    ///     A new ``HPOSet`` that contains only phenotype terms
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology, HPOSet
+    ///
+    ///     my_set = HPOSet.from_queries([
+    ///         'HP:0002650',
+    ///         'HP:0010674',
+    ///         'HP:0000925',
+    ///         'HP:0009121',
+    ///         'HP:0410003',
+    ///     ])
+    ///     
+    ///     active_set = my_set.replace_obsolete()
+    ///     
+    ///     len(my_set) # >> 5
+    ///     len(active_set) # >> 5
+    ///
+    ///     Ontology[410003] in my_set
+    ///     # >> True
+    ///     
+    ///     Ontology[410003] in active_set
+    ///     # >> False
+    ///
     fn replace_obsolete(&self) -> PyResult<Self> {
         let ont = get_ontology()?;
         let mut new_set = HpoSet::new(ont, self.ids.clone());
@@ -93,6 +211,25 @@ impl PyHpoSet {
         Ok(new_set.into())
     }
 
+    /// Returns a set of associated genes
+    ///
+    /// Returns
+    /// -------
+    /// set[:class:`pyhpo.Gene`]
+    ///     The union of genes associated with terms
+    ///     in the ``HPOSet``
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     disease = list(Ontology.omim_diseases)[0]
+    ///     for gene in disease.all_genes():
+    ///         print(gene.name)
+    ///
     fn all_genes(&self) -> PyResult<HashSet<PyGene>> {
         let ont = get_ontology()?;
         Ok(HpoSet::new(ont, self.ids.clone()).gene_ids().iter().fold(
@@ -106,6 +243,25 @@ impl PyHpoSet {
         ))
     }
 
+    /// Returns a set of associated diseases
+    ///
+    /// Returns
+    /// -------
+    /// set[:class:`pyhpo.Omim`]
+    ///     The union of Omim diseases associated with terms
+    ///     in the ``HPOSet``
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     gene = list(Ontology.genes)[0]
+    ///     for disease in disease.omim_diseases():
+    ///         print(disease.name)
+    ///
     fn omim_diseases(&self) -> PyResult<HashSet<PyOmimDisease>> {
         let ont = get_ontology()?;
         Ok(HpoSet::new(ont, self.ids.clone())
@@ -119,6 +275,44 @@ impl PyHpoSet {
             }))
     }
 
+    /// Returns basic information content stats about the
+    /// HPOTerms within the set
+    ///
+    /// Parameters
+    /// ----------
+    /// kind: str, default: ``omim``
+    ///     Which kind of information content should be calculated.
+    ///     Options are ['omim', 'gene']
+    ///
+    /// Returns
+    /// -------
+    /// dict
+    ///     Dict with the following items
+    ///
+    ///     * **mean** - float - Mean information content
+    ///     * **max** - float - Maximum information content value
+    ///     * **total** - float - Sum of all information content values
+    ///     * **all** - list of float -
+    ///       List with all information content values
+    ///
+    /// .. code block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     
+    ///     my_set = list(Ontology.genes)[0].hpo_set()
+    ///     my_set.information_content
+    ///     # >> {
+    ///     # >>     'mean': 3.0313432216644287,
+    ///     # >>     'total': 357.698486328125,
+    ///     # >>     'max': 8.308938026428223,
+    ///     # >>     'all': [
+    ///     # >>         0.7008119821548462,
+    ///     # >>         0.00024631671840325
+    ///     # >>         ...
+    ///     # >>     ]
+    ///     # >> }
+    ///
     #[pyo3(signature = (kind = "omim"))]
     fn information_content<'a>(&'a self, py: Python<'a>, kind: &str) -> PyResult<&PyDict> {
         let kind = PyInformationContentKind::try_from(kind)?;
@@ -149,14 +343,57 @@ impl PyHpoSet {
         Ok(dict)
     }
 
+    /// Calculates the distances between all its term-pairs. It also provides
+    /// basic calculations for variances among the pairs.
+    ///
+    /// Returns
+    /// -------
+    ///
+    /// tuple of (int, int, int, list of int)
+    ///     Tuple with the variance metrices
+    ///
+    ///     * **float** Average distance between pairs
+    ///     * **int** Smallest distance between pairs
+    ///     * **int** Largest distance between pairs
+    ///     * **list of int** List of all distances between pairs
     fn variance(&self) -> Self {
         unimplemented!()
     }
 
+    /// Helper generator function that returns all possible two-pair
+    /// combination between all its terms
+    ///
+    /// This function is direction dependent. That means that every
+    /// pair will appear twice. Once for each direction
+    ///
+    /// .. seealso:: :func:`pyhpo.HPOSet.combinations_one_way`
+    ///
+    /// Yields
+    /// ------
+    /// Tuple of :class:`pyhpo.HPOTerm`
+    ///
+    ///     Tuple containing the follow items
+    ///     * **HPOTerm** 1 of the pair
+    ///     * **HPOTerm** 2 of the pair
+    ///
     fn combinations(&self) -> Self {
         unimplemented!()
     }
 
+    /// Helper generator function that returns all possible two-pair
+    /// combination between all its terms
+    ///
+    /// This methow will report each pair only once
+    ///
+    /// .. seealso:: :func:`pyhpo.HPOSet.combinations`
+    ///
+    /// Yields
+    /// ------
+    /// Tuple of :class:`term.HPOTerm`
+    ///     Tuple containing the follow items
+    ///
+    ///     * **HPOTerm** instance 1 of the pair
+    ///     * **HPOTerm** instance 2 of the pair
     fn combinations_one_way(&self) -> Self {
         unimplemented!()
     }
@@ -164,6 +401,42 @@ impl PyHpoSet {
     /// Calculate similarity between this and another `HPOSet`
     ///
     /// This method runs parallelized on all avaible CPU
+    ///
+    /// Parameters
+    /// ----------
+    /// other: :class:`pyhpo.HPOSet`
+    ///     The ``HPOSet`` to calculate the similarity to
+    /// kind: str, default: ``omim``
+    ///     Which kind of information content to use for similarity calculation
+    ///     
+    ///     Available options:
+    ///
+    ///     * **omim**
+    ///     * **gene**
+    ///
+    /// method: str, default ``graphic``
+    ///     The method to use to calculate the similarity.
+    ///
+    ///     Available options:
+    ///
+    ///     * **resnik** - Resnik P, Proceedings of the 14th IJCAI, (1995)
+    ///     * **lin** - Lin D, Proceedings of the 15th ICML, (1998)
+    ///     * **jc** - Jiang J, Conrath D, ROCLING X, (1997)
+    ///       This is different to PyHPO
+    ///     * **jc2** - Jiang J, Conrath D, ROCLING X, (1997)
+    ///       Same as `jc`, but kept for backwards compatibility
+    ///     * **rel** - Relevance measure - Schlicker A, et.al.,
+    ///       BMC Bioinformatics, (2006)
+    ///     * **ic** - Information coefficient - Li B, et. al., arXiv, (2010)
+    ///     * **graphic** - Graph based Information coefficient -
+    ///       Deng Y, et. al., PLoS One, (2015)
+    ///     * **dist** - Distance between terms
+    ///
+    /// Returns
+    /// -------
+    /// float
+    ///     Similarity scores
+    ///
     /// Examples
     /// --------
     ///
@@ -205,6 +478,51 @@ impl PyHpoSet {
     ///
     /// This method runs parallelized on all avaible CPU
     ///
+    /// Parameters
+    /// ----------
+    /// other: list[:class:`pyhpo.HPOSet`]
+    ///     Calculate similarity between ``self`` and every provided ``HPOSet``
+    /// kind: str, default: ``omim``
+    ///     Which kind of information content to use for similarity calculation
+    ///     
+    ///     Available options:
+    ///
+    ///     * **omim**
+    ///     * **gene**
+    ///
+    /// method: str, default ``graphic``
+    ///     The method to use to calculate the similarity.
+    ///
+    ///     Available options:
+    ///
+    ///     * **resnik** - Resnik P, Proceedings of the 14th IJCAI, (1995)
+    ///     * **lin** - Lin D, Proceedings of the 15th ICML, (1998)
+    ///     * **jc** - Jiang J, Conrath D, ROCLING X, (1997)
+    ///       This is different to PyHPO
+    ///     * **jc2** - Jiang J, Conrath D, ROCLING X, (1997)
+    ///       Same as `jc`, but kept for backwards compatibility
+    ///     * **rel** - Relevance measure - Schlicker A, et.al.,
+    ///       BMC Bioinformatics, (2006)
+    ///     * **ic** - Information coefficient - Li B, et. al., arXiv, (2010)
+    ///     * **graphic** - Graph based Information coefficient -
+    ///       Deng Y, et. al., PLoS One, (2015)
+    ///     * **dist** - Distance between terms
+    ///
+    /// combine: str, default ``funSimAvg``
+    ///     The method to combine individual term similarity
+    ///     to HPOSet similarities.
+    ///
+    ///     Available options:
+    ///
+    ///     * **funSimAvg**
+    ///     * **funSimMax**
+    ///     * **BMA**
+    ///
+    /// Returns
+    /// -------
+    /// list[float]
+    ///     Similarity scores for every comparison
+    ///
     /// Examples
     /// --------
     ///
@@ -213,13 +531,13 @@ impl PyHpoSet {
     ///     from pyhpo import Ontology
     ///     Ontology()
     ///     gene_sets = [g.hpo_set() for g in Ontology.genes]
-    ///     similarities = gene_sets[0].batch_similarity(gene_sets)
+    ///     similarities = gene_sets[0].similarity_scores(gene_sets)
     ///     similarities[0:4]
     ///     # >> [1.0, 0.5000048279762268, 0.29546087980270386, 0.5000059008598328]
     ///
     #[pyo3(signature =(other, kind = "omim", method = "graphic", combine = "funSimAvg"))]
     #[pyo3(text_signature = "($self, other, kind, method, combine)")]
-    fn batch_similarity(
+    fn similarity_scores(
         &self,
         other: Vec<PyHpoSet>,
         kind: &str,
@@ -246,6 +564,42 @@ impl PyHpoSet {
             .collect())
     }
 
+    /// Returns a dict/JSON representation the HPOSet
+    ///
+    /// Parameters
+    /// ----------
+    /// verbose: bool
+    ///     Indicates if each HPOTerm should contain verbose information
+    ///     see :func:`pyhpo.HpoTerm.toJSON`
+    ///
+    /// Returns
+    /// -------
+    /// Dict
+    ///     Dict representation of all HPOTerms in the set
+    ///     that can be used for JSON serialization
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     my_set = HPOSet.from_serialized("7+118+152+234+271+315+478+479+492+496")
+    ///     my_set.toJSON()
+    ///     # >> [
+    ///     # >>     {'name': 'Autosomal recessive inheritance', 'id': 'HP:0000007', 'int': 7},
+    ///     # >>     {'name': 'Phenotypic abnormality', 'id': 'HP:0000118', 'int': 118},
+    ///     # >>     {'name': 'Abnormality of head or neck', 'id': 'HP:0000152', 'int': 152},
+    ///     # >>     {'name': 'Abnormality of the head', 'id': 'HP:0000234', 'int': 234},
+    ///     # >>     {'name': 'Abnormality of the face', 'id': 'HP:0000271', 'int': 271},
+    ///     # >>     {'name': 'Abnormality of the orbital region', 'id': 'HP:0000315', 'int': 315},
+    ///     # >>     {'name': 'Abnormality of the eye', 'id': 'HP:0000478', 'int': 478},
+    ///     # >>     {'name': 'Abnormal retinal morphology', 'id': 'HP:0000479', 'int': 479},
+    ///     # >>     {'name': 'Abnormal eyelid morphology', 'id': 'HP:0000492', 'int': 492},
+    ///     # >>     {'name': 'Abnormality of eye movement', 'id': 'HP:0000496', 'int': 496}
+    ///     # >> ]
+    ///
     #[pyo3(signature = (verbose = false))]
     #[pyo3(text_signature = "($self, verbose)")]
     #[allow(non_snake_case)]
@@ -277,6 +631,25 @@ impl PyHpoSet {
             .collect()
     }
 
+    /// Returns a serialized string representing the HPOSet
+    ///
+    /// Returns
+    /// -------
+    /// str
+    ///     A serialized string uniquely representing the HPOSet,
+    ///     e.g.: ``3+118+2650```
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     gene_sets = [g.hpo_set() for g in Ontology.genes]
+    ///     gene_sets[0].serialize()
+    ///     # >> 7+118+152+234+271+315+478+479+492+496.....
+    ///
     fn serialize(&self) -> String {
         let mut ids = self
             .ids
@@ -291,7 +664,28 @@ impl PyHpoSet {
 
     /// Returns the HPOTerms in the set
     ///
-    /// TODO: Convert this to an iterator
+    /// Returns
+    /// -------
+    /// list[:class:`pyhpo.HPOTerm`]
+    ///     A list of every term in the set
+    ///
+    ///
+    /// .. important::
+    ///
+    ///    The return type of this method will very likely change
+    ///    into an Iterator of ``HPOTerm``. (:doc:`api_changes`)
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     my_set = list(Ontology.genes)[0].hpo_set()
+    ///     for term in my_set.terms():
+    ///         print(term.name)
+    ///
     fn terms(&self) -> PyResult<Vec<PyHpoTerm>> {
         self.ids
             .iter()
@@ -299,6 +693,47 @@ impl PyHpoSet {
             .collect()
     }
 
+    /// Instantiate an HPOSet from various inputs
+    ///
+    /// This is the most common way to instantiate HPOSet
+    /// because it can use all kind of different inputs.
+    /// Callers must ensure that each query paramater
+    /// matches a single HPOTerm.
+    ///
+    /// Parameters
+    /// ----------
+    /// queries: list[str or int]
+    ///
+    ///     * **str** HPO term (e.g.: ``Scoliosis``)
+    ///     * **str** HPO-ID (e.g.: ``HP:0002650``)
+    ///     * **int** HPO term id (e.g.: ``2650``)
+    ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.HPOSet`
+    ///     A new ``HPOSet``
+    ///
+    /// Raises
+    /// ------
+    /// ValueError: query cannot be converted to HpoTermId
+    /// RuntimeError: query is a name and does not have a match in the Ontology
+    ///
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     my_set = HPOSet.from_queries([
+    ///         "HP:0002650",
+    ///         118,
+    ///         "Thoracolumbar scoliosis"
+    ///     ])
+    ///     len(my_set)
+    ///     # >> 3
+    ///
     #[classmethod]
     fn from_queries(_cls: &PyType, queries: Vec<PyQuery>) -> PyResult<Self> {
         let mut ids: Vec<HpoTermId> = Vec::with_capacity(queries.len());
@@ -308,22 +743,109 @@ impl PyHpoSet {
         Ok(ids.into_iter().collect::<PyHpoSet>())
     }
 
+    /// Instantiate an HPOSet from a serialized HPOSet
+    ///
+    /// This method is used when you have a serialized
+    /// form of the HPOSet to share between applications.
+    /// See :func:`pyhpo.HPOSet.serialize`
+    ///
+    /// Parameters
+    /// ----------
+    /// pickle: str
+    ///     A pickled string of all HPOTerms, e.g. ``118+2650``
+    ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.HPOSet`
+    ///     A new ``HPOSet``
+    ///
+    /// Raises
+    /// ------
+    /// ValueError: pickled item cannot be converted to HpoTermId
+    /// KeyError: pickeld item does not exist in the Ontology
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     my_set = HPOSet.from_serialized("7+118+152+234+271+315+478+479+492+496")
+    ///     len(my_set
+    ///     # >> 10
+    ///
     #[classmethod]
     fn from_serialized(_cls: &PyType, pickle: &str) -> PyResult<Self> {
-        Ok(pickle
+        let ids: HpoGroup = pickle
             .split('+')
             .map(|id| id.parse::<u32>())
             .collect::<Result<Vec<u32>, ParseIntError>>()?
             .iter()
-            .map(|id| HpoTermId::from(*id))
-            .collect::<PyHpoSet>())
+            .map(|id| {
+                // in theory, we could simply call HpoTermId::from(*id)
+                // here, but then we would not check for invalid input.
+                // Instead we ensure we'll fail during instantiation
+                // already
+                Ok(term_from_id(*id)?.id().as_u32())
+            })
+            .collect::<PyResult<Vec<u32>>>()?
+            .into();
+
+        Ok(Self { ids })
     }
 
+    /// Instantiate an HPOSet from a Gene
+    ///
+    /// Parameters
+    /// ----------
+    /// gene: :class:`pyhpo.Gene`
+    ///     A gene from the ontology
+    ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.HPOSet`
+    ///     A new ``HPOSet``
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     gene_set = HPOSet.from_gene(Ontology.genes[0])
+    ///     len(gene_set)
+    ///     # >> 118
+    ///
     #[classmethod]
     pub fn from_gene(_cls: &PyType, gene: &PyGene) -> PyResult<Self> {
         gene.try_into()
     }
 
+    /// Instantiate an HPOSet from an Omim disease
+    ///
+    /// Parameters
+    /// ----------
+    /// gene: :class:`pyhpo.Omim`
+    ///     An Omim disease from the ontology
+    ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.HPOSet`
+    ///     A new ``HPOSet``
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     disease_set = HPOSet.from_disease(Ontology.omim_diseases[0])
+    ///     len(disease_set)
+    ///     # >> 18
+    ///
     #[classmethod]
     pub fn from_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<Self> {
         disease.try_into()
@@ -335,12 +857,12 @@ impl PyHpoSet {
 
     fn __repr__(&self) -> String {
         format!(
-            "HPOSet.from_serialized({})",
+            "HPOSet.from_serialized(\"{}\")",
             self.ids
                 .iter()
                 .map(|i| i.as_u32().to_string())
                 .collect::<Vec<String>>()
-                .join(",")
+                .join("+")
         )
     }
 
@@ -477,6 +999,20 @@ impl BasicPyHpoSet {
                 .map(|id| HpoTermId::from_u32(*id)),
         ))
     }
+
+    #[classmethod]
+    pub fn from_gene(_cls: &PyType, gene: &PyGene) -> PyResult<PyHpoSet> {
+        Ok(BasicPyHpoSet::build(
+            gene.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)),
+        ))
+    }
+
+    #[classmethod]
+    pub fn from_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<PyHpoSet> {
+        Ok(BasicPyHpoSet::build(
+            disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)),
+        ))
+    }
 }
 
 #[pyclass(name = "HPOPhenoSet")]
@@ -526,6 +1062,20 @@ impl PhenoSet {
                 .collect::<Result<Vec<u32>, ParseIntError>>()?
                 .iter()
                 .map(|id| HpoTermId::from_u32(*id)),
+        ))
+    }
+
+    #[classmethod]
+    pub fn from_gene(_cls: &PyType, gene: &PyGene) -> PyResult<PyHpoSet> {
+        Ok(PhenoSet::build(
+            gene.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)),
+        ))
+    }
+
+    #[classmethod]
+    pub fn from_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<PyHpoSet> {
+        Ok(PhenoSet::build(
+            disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)),
         ))
     }
 }

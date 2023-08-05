@@ -31,6 +31,12 @@ impl PyOntology {
     /// list[:class:`pyhpo.Gene`]
     ///     All genes that are associated to the :class:`pyhpo.HPOTerm` in the ontology
     ///
+    ///
+    /// .. important::
+    ///
+    ///    The return type of this method will very likely change
+    ///    into an Iterator of ``Gene``. (:doc:`api_changes`)
+    ///
     #[getter(genes)]
     fn genes(&self) -> PyResult<Vec<PyGene>> {
         let ont = get_ontology()?;
@@ -49,6 +55,12 @@ impl PyOntology {
     /// list[:class:`pyhpo.Omim`]
     ///     All Omim diseases that are associated to the :class:`pyhpo.HPOTerm` in the ontology
     ///
+    ///
+    /// .. important::
+    ///
+    ///    The return type of this method will very likely change
+    ///    into an Iterator of ``Omim``. (:doc:`api_changes`)
+    ///
     #[getter(omim_diseases)]
     fn omim_diseases(&self) -> PyResult<Vec<PyOmimDisease>> {
         let ont = get_ontology()?;
@@ -64,12 +76,11 @@ impl PyOntology {
     ///
     /// Parameters
     /// ----------
-    /// query: `str` or `int`
+    /// query: str or int
     ///
-    ///     * **str** HPO term ``Scoliosis``
-    ///     * **str** synonym ``Curved spine``
-    ///     * **str** HPO-ID ``HP:0002650``
-    ///     * **int** HPO term id ``2650``
+    ///     * **str** HPO term (e.g.: ``Scoliosis``)
+    ///     * **str** HPO-ID (e.g.: ``HP:0002650``)
+    ///     * **int** HPO term id (e.g.: ``2650``)
     ///
     /// Returns
     /// -------
@@ -78,34 +89,35 @@ impl PyOntology {
     ///
     /// Raises
     /// ------
-    /// `RuntimeError`
+    /// RuntimeError
     ///     No HPO term is found for the provided query
-    /// `TypeError`
+    /// TypeError
     ///     The provided query is an unsupported type and can't be properly
     ///     converted
-    /// `ValueError`
+    /// ValueError
     ///     The provided HPO ID cannot be converted to the correct
     ///     integer representation
     ///
-    /// Example
-    /// -------
-    ///     ::
+    /// Examples
+    /// --------
     ///
-    ///         # Search by ID (int)
-    ///         >>> ontology.get_hpo_object(3)
-    ///         HP:0000003 | Multicystic kidney dysplasia
+    /// .. code-block:: python
     ///
-    ///         # Search by HPO-ID (string)
-    ///         >>> ontology.get_hpo_object('HP:0000003')
-    ///         HP:0000003 | Multicystic kidney dysplasia
+    ///     from pyhpo import Ontology
+    ///     Ontology()
     ///
-    ///         # Search by term (string)
-    ///         >>> ontology.get_hpo_object('Multicystic kidney dysplasia')
-    ///         HP:0000003 | Multicystic kidney dysplasia
+    ///     # Search by ID (int)
+    ///     Ontology.get_hpo_object(3)
+    ///     # >> HP:0000003 | Multicystic kidney dysplasia
     ///
-    ///         # Search by synonym (string)
-    ///         >>> ontology.get_hpo_object('Multicystic renal dysplasia')
-    ///         HP:0000003 | Multicystic kidney dysplasia
+    ///     # Search by HPO-ID (string)
+    ///     Ontology.get_hpo_object('HP:0000003')
+    ///     # >> HP:0000003 | Multicystic kidney dysplasia
+    ///
+    ///     # Search by term (string)
+    ///     Ontology.get_hpo_object('Multicystic kidney dysplasia')
+    ///     # >> HP:0000003 | Multicystic kidney dysplasia
+    ///
     ///
     #[pyo3(text_signature = "($self, query)")]
     fn get_hpo_object(&self, query: PyQuery) -> PyResult<PyHpoTerm> {
@@ -116,7 +128,7 @@ impl PyOntology {
     ///
     /// Parameters
     /// ----------
-    /// query: `str`
+    /// query: str
     ///     Name of the HPO term, e.g. ``Scoliosis``
     ///
     /// Returns
@@ -126,8 +138,20 @@ impl PyOntology {
     ///
     /// Raises
     /// ------
-    /// `RuntimeError`
+    /// RuntimeError
     ///     No HPO term is found for the provided query
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///
+    ///     Ontology.match('Multicystic kidney dysplasia')
+    ///     # >>> HP:0000003 | Multicystic kidney dysplasia
+    ///
     #[pyo3(text_signature = "($self, query)")]
     fn r#match(&self, query: &str) -> PyResult<PyHpoTerm> {
         let ont = get_ontology()?;
@@ -144,27 +168,47 @@ impl PyOntology {
     ///
     /// Parameters
     /// ----------
-    /// query1: `str` or `int`
-    ///     HPO term 1, synonym or HPO-ID (HP:00001) to match
-    ///     HPO term id (Integer based)
+    /// query1: str or int
+    ///     Name, HPO-ID (HP:0040064) or integer ID of source term
     ///     e.g: ``Abnormality of the nervous system``
-    /// query2: `str` or `int`
-    ///     HPO term 2, synonym or HPO-ID (HP:00001) to match
-    ///     HPO term id (Integer based)
+    /// query2: str or int
+    ///     Name, HPO-ID (HP:0040064) or integer ID of target term
     ///     e.g: ``Abnormality of the nervous system``
     ///
     /// Returns
     /// -------
     /// int
     ///     Length of path
-    /// tuple
-    ///     Tuple of HPOTerms in the path
+    /// list
+    ///     List of HPOTerms in the path
     /// int
-    ///     Number of steps from term-1 to the common parent
-    ///     **(Not yet implemented. Returns ``0``)**
+    ///     Number of steps from term1 to the common parent
+    ///     (Not implemented. Returns ``0``)
     /// int
-    ///     Number of steps from term-2 to the common parent
-    ///     **(Not yet implemented. Returns ``0``)**
+    ///     Number of steps from term2 to the common parent
+    ///     (Not implemented. Returns ``0``)
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///
+    ///     Ontology.path(40064, 'Multicystic kidney dysplasia')
+    ///     # >> (
+    ///     # >>     8,
+    ///     # >>     [
+    ///     # >>         <HpoTerm (HP:0040064)>, <HpoTerm (HP:0000118)>,
+    ///     # >>         <HpoTerm (HP:0000119)>, <HpoTerm (HP:0000079)>,
+    ///     # >>         <HpoTerm (HP:0010935)>, <HpoTerm (HP:0000077)>,
+    ///     # >>         <HpoTerm (HP:0012210)>, <HpoTerm (HP:0000107)>,
+    ///     # >>         <HpoTerm (HP:0000003)>
+    ///     # >>     ],
+    ///     # >>     0,
+    ///     # >>     0
+    ///     # >> )
     ///
     #[pyo3(text_signature = "($self, query1, query2)")]
     fn path(
@@ -177,7 +221,42 @@ impl PyOntology {
         t1.path_to_other(&t2)
     }
 
-    /// TODO: Return an actual iterator instead
+    /// Returns a list of HPOTerms that match the query
+    ///
+    /// Parameters
+    /// ----------
+    /// query: str
+    ///     Query for substring search of HPOTerms
+    ///
+    /// Returns
+    /// -------
+    /// list[:class:`HPOTerm`]
+    ///     All terms matching the query string
+    ///
+    ///
+    /// .. important::
+    ///
+    ///    The return type of this method will very likely change
+    ///    into an Iterator of ``HPOTerm``. (:doc:`api_changes`)
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///
+    ///     for term in Ontology.search("kidney dis"):
+    ///         print(term)
+    ///
+    ///     # >> HP:0003774 | Stage 5 chronic kidney disease
+    ///     # >> HP:0012622 | Chronic kidney disease
+    ///     # >> HP:0012623 | Stage 1 chronic kidney disease
+    ///     # >> HP:0012624 | Stage 2 chronic kidney disease
+    ///     # >> HP:0012625 | Stage 3 chronic kidney disease
+    ///     # >> HP:0012626 | Stage 4 chronic kidney disease
+    ///
     #[pyo3(text_signature = "($self, query)")]
     fn search(&self, query: &str) -> PyResult<Vec<PyHpoTerm>> {
         let mut res = Vec::new();
@@ -193,10 +272,10 @@ impl PyOntology {
 
     /// Returns the HpoTerm with the provided `id`
     ///
-    /// Arguments
-    /// ---------
-    /// a: `int`
-    ///     ID of the term as `int` (`HP:0000123` --> `123`)
+    /// Parameters
+    /// ----------
+    /// id: int
+    ///     ID of the term as int (``HP:0000123`` --> ``123``)
     ///
     /// Returns
     /// -------
@@ -213,9 +292,9 @@ impl PyOntology {
     ///     Ontology()
     ///     
     ///     term = Ontology.hpo(11968)
-    ///     term.name()  # ==> 'Feeding difficulties'
-    ///     term.id()    # ==> 'HP:0011968'
-    ///     int(tern)    # ==> 11968
+    ///     term.name()  # >> 'Feeding difficulties'
+    ///     term.id()    # >> 'HP:0011968'
+    ///     int(tern)    # >> 11968
     ///
     #[pyo3(text_signature = "($self, id)")]
     fn hpo(&self, id: u32) -> PyResult<PyHpoTerm> {
@@ -228,6 +307,19 @@ impl PyOntology {
     /// -------
     /// str
     ///     The HPO version, e.g. ``2023-04-05``
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     
+    ///     Ontology()
+    ///     
+    ///     Ontology.version()
+    ///     # >> "2023-04-05"
+    ///
     fn version(&self) -> PyResult<String> {
         Ok(get_ontology()?.hpo_version())
     }
@@ -237,7 +329,8 @@ impl PyOntology {
     /// The ontology files can be in the standard format as provided
     /// by Jax or as a binary file as generated by `hpo`
     ///
-    /// Arguments
+    /// Parameters
+    /// ----------
     /// data_folder: str
     ///     Path to the source files (default: `./ontology.hpo`)
     /// binary: bool
@@ -271,7 +364,7 @@ impl PyOntology {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     len(Ontology)  # ==> 17059
+    ///     len(Ontology)  # >> 17059
     ///
     fn __len__(&self) -> PyResult<usize> {
         Ok(get_ontology()?.len())

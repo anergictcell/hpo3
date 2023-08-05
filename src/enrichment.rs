@@ -21,7 +21,7 @@ enum EnrichmentType {
 /// Parameters
 /// ----------
 /// category: str
-///     Specify `gene` or `omim` to determine which enrichments to calculate
+///     Specify ``gene`` or ``omim`` to determine which enrichments to calculate
 ///
 /// Examples
 /// --------
@@ -59,11 +59,25 @@ impl PyEnrichmentModel {
     ///
     /// Parameters
     /// ----------
-    /// method: str
+    /// method: `str`
     ///     Currently, only `hypergeom` is implemented
     /// hposet: :class:`pyhpo.HPOSet`
     ///     The set of HPOTerms to use as sampleset for calculation of
     ///     enrichment. The full ontology is used as background set.
+    ///
+    /// Returns
+    /// -------
+    /// list[dict]
+    ///     a list with dict that contain data about the enrichment, with the keys:
+    ///
+    ///     * **enrichment** : `float`
+    ///         The hypergeometric enrichment score
+    ///     * **fold** : `float`
+    ///         The fold enrichment
+    ///     * **count** : `int`
+    ///         Number of occurrences
+    ///     * **item** : `Gene` :class:`pyhpo.Gene` or :class:`pyhpo.Omim`
+    ///         The actual enriched gene or disease
     ///
     /// Examples
     /// --------
@@ -81,9 +95,15 @@ impl PyEnrichmentModel {
     ///
     ///     enriched_diseases = model.enrichment("hypergeom", term_set)
     ///
-    ///     # currently, the result only contains the ID, so you must
-    ///     # get the actual disease from `OmimDisease`
-    ///     top_disease = Omim.get(enriched_diseases[0]["item"])
+    ///     enriched_diseases[0]
+    ///
+    ///     # >> {
+    ///     # >>     "enrichment": 7.708086517543451e-223,
+    ///     # >>     "fold": 27.44879391414045,
+    ///     # >>     "count": 164,
+    ///     # >>     "item": <OmimDisease (608013)>
+    ///     # >> }
+    ///
     ///
     #[pyo3(text_signature = "($self, method, hposet)")]
     fn enrichment<'a>(
