@@ -21,14 +21,20 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules"
 ]
 license = {text = "MIT"}
-authors = [{name = "Jonas Marcello", email = "jonas.marcello@esbme.com"}]
+authors = [
+    {name = "Jonas Marcello", email = "jonas.marcello@esbme.com"}
+]
+keywords = [
+    "hpo", "phenotype", "genotype", "bioinformatics", "rare diseases"
+]
 
 dynamic = ["version"]
 
 [project.urls]
-homepage = "https://github.com/anergictcell/hpo3"
-repository = "https://github.com/anergictcell/hpo3"
+Homepage = "https://github.com/anergictcell/hpo3"
+Repository = "https://github.com/anergictcell/hpo3"
 "Bug Tracker" = "https://github.com/anergictcell/hpo3/issues"
+Documentation = "https://hpo3.readthedocs.io/"
 
 [tool.maturin]
 include = ["ontology.hpo"]
