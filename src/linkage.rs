@@ -66,6 +66,15 @@ use crate::{get_ontology, information_content::PyInformationContentKind, set::Py
 ///     * **funSimMax** - Schlicker A, BMC Bioinformatics, (2006)
 ///     * **BMA** - Deng Y, et. al., PLoS One, (2015)
 ///
+/// Raises
+/// ------
+/// NameError
+///     Ontology not yet constructed
+/// KeyError
+///     Invalid ``kind``
+/// RuntimeError
+///     Invalid ``method`` or ``similarity_method`` or ``combine``
+///
 /// Examples
 /// --------
 ///

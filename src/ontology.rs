@@ -37,6 +37,10 @@ impl PyOntology {
     ///    The return type of this method will very likely change
     ///    into an Iterator of ``Gene``. (:doc:`api_changes`)
     ///
+    /// Raises
+    /// ------
+    ///
+    /// NameError: Ontology not yet constructed
     #[getter(genes)]
     fn genes(&self) -> PyResult<Vec<PyGene>> {
         let ont = get_ontology()?;
@@ -61,6 +65,10 @@ impl PyOntology {
     ///    The return type of this method will very likely change
     ///    into an Iterator of ``Omim``. (:doc:`api_changes`)
     ///
+    /// Raises
+    /// ------
+    ///
+    /// NameError: Ontology not yet constructed
     #[getter(omim_diseases)]
     fn omim_diseases(&self) -> PyResult<Vec<PyOmimDisease>> {
         let ont = get_ontology()?;
@@ -89,6 +97,8 @@ impl PyOntology {
     ///
     /// Raises
     /// ------
+    /// NameError
+    ///     Ontology not yet constructed
     /// RuntimeError
     ///     No HPO term is found for the provided query
     /// TypeError
@@ -138,6 +148,8 @@ impl PyOntology {
     ///
     /// Raises
     /// ------
+    /// NameError
+    ///     Ontology not yet constructed
     /// RuntimeError
     ///     No HPO term is found for the provided query
     ///
@@ -187,6 +199,19 @@ impl PyOntology {
     /// int
     ///     Number of steps from term2 to the common parent
     ///     (Not implemented. Returns ``0``)
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    /// RuntimeError
+    ///     No HPO term is found for the provided query
+    /// TypeError
+    ///     The provided query is an unsupported type and can't be properly
+    ///     converted
+    /// ValueError
+    ///     The provided HPO ID cannot be converted to the correct
+    ///     integer representation
     ///
     /// Examples
     /// --------
@@ -239,6 +264,11 @@ impl PyOntology {
     ///    The return type of this method will very likely change
     ///    into an Iterator of ``HPOTerm``. (:doc:`api_changes`)
     ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    ///
     /// Examples
     /// --------
     ///
@@ -282,6 +312,13 @@ impl PyOntology {
     /// :class:`pyhpo.HPOTerm`
     ///     The HPO-Term
     ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    /// KeyError
+    ///     No HPO term is found for the provided query
+    ///
     /// Examples
     /// --------
     ///
@@ -307,6 +344,11 @@ impl PyOntology {
     /// -------
     /// str
     ///     The HPO version, e.g. ``2023-04-05``
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
     ///
     /// Examples
     /// --------
@@ -366,6 +408,11 @@ impl PyOntology {
     ///     Ontology()
     ///     len(Ontology)  # >> 17059
     ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    ///
     fn __len__(&self) -> PyResult<usize> {
         Ok(get_ontology()?.len())
     }
@@ -377,11 +424,42 @@ impl PyOntology {
         }
     }
 
+    /// Subset the Ontology to retrieve a single ``HPOTerm``
+    ///
+    /// Parameters
+    /// ----------
+    /// id: int
+    ///     The integer representation of the HPO-ID
+    ///
+    /// Returns
+    /// -------
+    /// :class:`HPOTerm`
+    ///     The ``HPOTerm``
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    /// KeyError
+    ///     No HPO term is found for the provided query
+    ///
     fn __getitem__(&self, id: u32) -> PyResult<PyHpoTerm> {
         self.hpo(id)
     }
 
-    fn __iter__(&self) -> OntologyIterator {
+    /// Iterate all ``HPOTerms`` within the Ontology
+    ///
+    /// Returns
+    /// -------
+    /// Iterator[:class:`HPOTerm`]
+    ///     An iterator of ``HPOTerm``\s
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    ///
+    fn __iter__(&self) -> PyResult<OntologyIterator> {
         OntologyIterator::new()
     }
 }
@@ -392,13 +470,12 @@ struct OntologyIterator {
 }
 
 impl OntologyIterator {
-    fn new() -> Self {
-        let ids: VecDeque<u32> = get_ontology()
-            .unwrap()
+    fn new() -> PyResult<Self> {
+        let ids: VecDeque<u32> = get_ontology()?
             .into_iter()
             .map(|term| term.id().as_u32())
             .collect();
-        Self { ids }
+        Ok(Self { ids })
     }
 }
 

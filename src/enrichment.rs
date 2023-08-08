@@ -15,13 +15,18 @@ enum EnrichmentType {
     Omim,
 }
 
-/// Returns a new `EnrichmentModel` to calculate enrichment
-/// for either Genes or Omim Diseases
+/// Calculate the hypergeometric enrichment of genes
+/// or diseases in a set of HPO terms
 ///
 /// Parameters
 /// ----------
 /// category: str
 ///     Specify ``gene`` or ``omim`` to determine which enrichments to calculate
+///
+/// Raises
+/// ------
+/// KeyError
+///     Invalid category, only ``gene`` or ``omim`` are possible
 ///
 /// Examples
 /// --------
@@ -45,6 +50,33 @@ pub(crate) struct PyEnrichmentModel {
 
 #[pymethods]
 impl PyEnrichmentModel {
+    /// Returns a new `EnrichmentModel` to calculate enrichment
+    /// for either Genes or Omim Diseases
+    ///
+    /// Parameters
+    /// ----------
+    /// category: str
+    ///     Specify ``gene`` or ``omim`` to determine which enrichments to calculate
+    ///
+    /// Raises
+    /// ------
+    /// KeyError
+    ///     Invalid category, only ``gene`` or ``omim`` are possible
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology, Gene, Omim
+    ///     from pyhpo import stats
+    ///
+    ///     Ontology()
+    ///     model = stats.EnrichmentModel("omim")
+    ///
+    ///     # use the `model.enrichment` method to calculate
+    ///     # the enrichment of Omim Diseases within an HPOSet
+    ///
     #[new]
     fn new(category: &str) -> PyResult<Self> {
         let kind = match category {
@@ -78,6 +110,13 @@ impl PyEnrichmentModel {
     ///         Number of occurrences
     ///     * **item** : `Gene` :class:`pyhpo.Gene` or :class:`pyhpo.Omim`
     ///         The actual enriched gene or disease
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    /// NotImplementedError
+    ///     invalid ``method`` provided, only ``hypergeom`` is implemented
     ///
     /// Examples
     /// --------
@@ -144,6 +183,11 @@ impl PyEnrichmentModel {
     }
 }
 
+/// Returns the disease enrichment data as a Python dict
+///
+/// # Errors
+///
+/// - PyNameError: Ontology not yet constructed
 pub(crate) fn disease_enrichment_dict<'a, T>(
     py: Python<'a>,
     enrichment: &hpo::stats::Enrichment<T>,
@@ -163,6 +207,11 @@ where
     Ok(dict)
 }
 
+/// Returns the gene enrichment data as a Python dict
+///
+/// # Errors
+///
+/// - PyNameError: Ontology not yet constructed
 pub(crate) fn gene_enrichment_dict<'a, T>(
     py: Python<'a>,
     enrichment: &hpo::stats::Enrichment<T>,

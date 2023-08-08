@@ -3,6 +3,7 @@ use pyo3::prelude::*;
 use pyo3::PyErr;
 use pyo3::PyResult;
 
+/// Holds the information content for an ``HPOTerm``
 #[pyclass(name = "InformationContent")]
 pub struct PyInformationContent {
     omim: f32,
@@ -20,11 +21,13 @@ impl From<&hpo::term::InformationContent> for PyInformationContent {
 
 #[pymethods]
 impl PyInformationContent {
+    /// Returns the gene - based information content
     #[getter(gene)]
     pub fn gene(&self) -> f32 {
         self.gene
     }
 
+    /// Returns the Omim disease - based information content
     #[getter(omim)]
     pub fn omim(&self) -> f32 {
         self.omim
@@ -56,6 +59,8 @@ pub enum PyInformationContentKind {
 
 impl TryFrom<&str> for PyInformationContentKind {
     type Error = PyErr;
+    /// # Errors
+    /// PyKeyError
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value {
             "omim" => Ok(PyInformationContentKind::Omim),

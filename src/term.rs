@@ -36,8 +36,9 @@ impl PyHpoTerm {
 
     /// Returns the `hpo::HpoTerm`
     ///
-    /// This method assumes that this operation
-    /// will succeed because the term should exist
+    /// This method assumes that this operation succeeds
+    /// because terms cannot be instantiated from Python
+    /// and can only be retrieved from the Ontology
     fn hpo(&self) -> hpo::HpoTerm {
         let ont = ONTOLOGY
             .get()
@@ -76,6 +77,11 @@ impl Hash for PyHpoTerm {
 impl PyHpoTerm {
     /// Returns the HPO Term ID
     ///
+    /// Returns
+    /// -------
+    /// str
+    ///     The term identifier, e.g.: ``HP:0011968``
+    ///
     /// Examples
     /// --------
     ///
@@ -92,6 +98,11 @@ impl PyHpoTerm {
     }
 
     /// Returns the name of the HPO Term
+    ///
+    /// Returns
+    /// -------
+    /// str
+    ///     The term name, e.g.: ``Feeding difficulties``
     ///
     /// Examples
     /// --------
@@ -110,6 +121,11 @@ impl PyHpoTerm {
 
     /// Returns the Information Content of the HPO Term
     ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.types.InformationContent`
+    ///     The term's information content
+    ///
     /// Examples
     /// --------
     ///
@@ -127,6 +143,11 @@ impl PyHpoTerm {
     }
 
     /// A set of direct parents
+    ///
+    /// Returns
+    /// -------
+    /// Set[:class:`HPOTerm`]
+    ///     All direct parents
     ///
     /// Examples
     /// --------
@@ -150,6 +171,11 @@ impl PyHpoTerm {
     }
 
     /// A set of all parents
+    ///
+    /// Returns
+    /// -------
+    /// Set[:class:`HPOTerm`]
+    ///     All direct and indirect parents
     ///
     /// Examples
     /// --------
@@ -175,6 +201,11 @@ impl PyHpoTerm {
     }
 
     /// A set of direct children
+    ///
+    /// Returns
+    /// -------
+    /// Set[:class:`HPOTerm`]
+    ///     All direct children
     ///
     /// Examples
     /// --------
@@ -202,6 +233,11 @@ impl PyHpoTerm {
     /// The list includes "inherited" genes that are not directly
     /// linked to the term, but to one of its children
     ///
+    /// Returns
+    /// -------
+    /// Set[:class:`pyhpo.Gene`]
+    ///     All associated genes
+    ///
     /// Examples
     /// --------
     ///
@@ -226,6 +262,11 @@ impl PyHpoTerm {
     /// The list includes "inherited" diseases that are not directly
     /// linked to the term, but to one of its children
     ///
+    /// Returns
+    /// -------
+    /// Set[:class:`pyhpo.Omim`]
+    ///     All associated Omim diseases
+    ///
     /// Examples
     /// --------
     ///
@@ -247,7 +288,20 @@ impl PyHpoTerm {
             })
     }
 
-    /// A list of the phenotypical categories the term belongs to
+    /// A list of the root phenotypical or modifier categories the term
+    /// belongs to
+    ///
+    /// Returns
+    /// -------
+    /// Set[:class:`HPOTerm`]
+    ///     The root phenotypical terms or modifier categories
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    /// KeyError
+    ///     No HPO term is found for the provided query
     ///
     /// Examples
     /// --------
@@ -261,11 +315,40 @@ impl PyHpoTerm {
     ///         print(cat.name)
     ///
     #[getter(categories)]
-    fn categories(&self) -> PyResult<Vec<PyHpoTerm>> {
+    fn categories(&self) -> PyResult<HashSet<PyHpoTerm>> {
         self.hpo()
             .categories()
             .iter()
             .map(|id| pyterm_from_id(id.as_u32()))
+            .collect()
+    }
+
+    /// A list of parent terms, in the obo format
+    ///
+    /// Returns
+    /// -------
+    /// list[str]
+    ///     The direct parents, e.g.: ``HP:0003026 ! Short long bone``
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     term = Ontology[10049]
+    ///     for parent in term._is_a:
+    ///         print(parent)
+    ///
+    ///     # >> HP:0003026 ! Short long bone
+    ///     # >> HP:0005914 ! Aplasia/Hypoplasia involving the metacarpal bones
+    ///
+    #[getter(_is_a)]
+    fn is_a(&self) -> Vec<String> {
+        self.hpo()
+            .parents()
+            .map(|parent| format!("{} ! {}", parent.id(), parent.name()))
             .collect()
     }
 
@@ -598,6 +681,13 @@ impl PyHpoTerm {
     /// float
     ///     The similarity score
     ///
+    /// Raises
+    /// ------
+    /// KeyError
+    ///     Invalid ``kind``
+    /// RuntimeError
+    ///     Invalid ``method``
+    ///
     /// Examples
     /// --------
     ///
@@ -665,6 +755,13 @@ impl PyHpoTerm {
     /// -------
     /// List[float]
     ///     The similarity scores
+    ///
+    /// Raises
+    /// ------
+    /// KeyError
+    ///     Invalid ``kind``
+    /// RuntimeError
+    ///     Invalid ``method``
     ///
     /// Examples
     /// --------
@@ -805,16 +902,21 @@ impl PyHpoTerm {
         self.__int__()
     }
 
+    /// Raises
+    /// ------
+    /// TypeError
+    ///     Invalid comparison. Only == and != is supported
+    ///
     fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
         match op {
+            CompareOp::Eq => Ok(self == other),
+            CompareOp::Ne => Ok(self != other),
             CompareOp::Lt => Err(PyTypeError::new_err(
                 "\"<\" is not supported for HPOTerm instances",
             )),
             CompareOp::Le => Err(PyTypeError::new_err(
                 "\"<=\" is not supported for HPOTerm instances",
             )),
-            CompareOp::Eq => Ok(self == other),
-            CompareOp::Ne => Ok(self != other),
             CompareOp::Gt => Err(PyTypeError::new_err(
                 "\">\" is not supported for HPOTerm instances",
             )),

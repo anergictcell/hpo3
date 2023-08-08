@@ -25,8 +25,10 @@ Missing or different functionality:
 * Association of Orpha diseases to ``HPOTerm``\s
 * Association of Decipher diseases to ``HPOTerm``\s
 * custom ``InformationContent`` calculations
+* ``Ontology.search`` does not include synonyms
 * ``HPOSet.combinations``
 * ``HPOSet.combinations_one_way``
 * ``HPOSet.variance``
+* ``HPOTerm.synonym``, ``HPOTerm.xref``, ``HPOTerm.definition`` and ``HPOTerm.comment`` are not present
 * ``HPOTerm.path_to_other`` (minor implementation detail difference)
 * ``Ontology.path`` (minor implementation detail difference)
