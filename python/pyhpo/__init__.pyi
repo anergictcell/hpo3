@@ -3,17 +3,12 @@ from typing import Any, Dict, Iterable, Iterator, List, Set, Tuple
 from . import annotations as annotations
 from .annotations import Gene as Gene
 from .annotations import Omim as Omim
+from .types import InformationContent
 
 from . import helper as helper
 
 __version__: str
 __backend__: str
-
-
-class InformationContent:
-    gene: float
-    omim: float
-    def __getitem__(self, key: str) -> float: ...
 
 
 class HPOTerm:

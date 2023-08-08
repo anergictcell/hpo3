@@ -54,16 +54,48 @@ impl From<HpoSet<'_>> for PyHpoSet {
 ///
 #[pymethods]
 impl PyHpoSet {
+    /// Instantiates a new ``HPOSet``
+    ///
+    /// Parameters
+    /// ----------
+    /// terms: List[int | :class:`pyhpo.HPOTerm`]
+    ///     The terms that make up the set
+    ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.HPOSet`
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    /// KeyError
+    ///     (only when ``int`` are used as input): HPOTerm does not exist
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block: python
+    ///
+    ///     from pyhpo import Ontology, HPOSet
+    ///     Ontology()
+    ///     s = HPOSet([1, 118])
+    ///     len(s)  
+    ///     # >> 2
+    ///
     #[new]
-    fn new(terms: Vec<TermOrId>) -> Self {
+    fn new(terms: Vec<TermOrId>) -> PyResult<Self> {
         let mut ids = HpoGroup::new();
         for id in terms {
             match id {
-                TermOrId::Id(x) => ids.insert(x),
+                TermOrId::Id(x) => {
+                    _ = term_from_id(x)?;
+                    ids.insert(x)
+                }
                 TermOrId::Term(x) => ids.insert(x.hpo_term_id().as_u32()),
             };
         }
-        Self { ids }
+        Ok(Self { ids })
     }
 
     /// Add an HPOTerm to the HPOSet
@@ -73,6 +105,13 @@ impl PyHpoSet {
     /// term: :class:`HPOTerm` or int
     ///     The term to add, either as actual ``HPOTerm``
     ///     or the integer representation
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    /// KeyError
+    ///     (only when ``int`` are used as input): HPOTerm does not exist
     ///
     /// Examples
     /// --------
@@ -87,11 +126,15 @@ impl PyHpoSet {
     ///     my_set.add(2650)
     ///     len(my_set) # >> 2
     ///
-    fn add(&mut self, term: TermOrId) {
+    fn add(&mut self, term: TermOrId) -> PyResult<()> {
         match term {
-            TermOrId::Id(x) => self.ids.insert(x),
+            TermOrId::Id(x) => {
+                _ = term_from_id(x)?;
+                self.ids.insert(x)
+            }
             TermOrId::Term(x) => self.ids.insert(x.hpo_term_id().as_u32()),
         };
+        Ok(())
     }
 
     /// Returns a new HPOSet that does not contain ancestor terms
@@ -104,6 +147,11 @@ impl PyHpoSet {
     /// -------
     /// :class:`pyhpo.HPOSet`
     ///     A new ``HPOSet`` that contains only the most specific terms
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
     ///
     /// Examples
     /// --------
@@ -138,6 +186,11 @@ impl PyHpoSet {
     /// -------
     /// :class:`pyhpo.HPOSet`
     ///     A new ``HPOSet`` that contains only phenotype terms
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
     ///
     /// Examples
     /// --------
@@ -176,6 +229,11 @@ impl PyHpoSet {
     /// -------
     /// :class:`pyhpo.HPOSet`
     ///     A new ``HPOSet`` that contains only phenotype terms
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
     ///
     /// Examples
     /// --------
@@ -219,6 +277,11 @@ impl PyHpoSet {
     ///     The union of genes associated with terms
     ///     in the ``HPOSet``
     ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    ///
     /// Examples
     /// --------
     ///
@@ -250,6 +313,11 @@ impl PyHpoSet {
     /// set[:class:`pyhpo.Omim`]
     ///     The union of Omim diseases associated with terms
     ///     in the ``HPOSet``
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
     ///
     /// Examples
     /// --------
@@ -294,6 +362,14 @@ impl PyHpoSet {
     ///     * **total** - float - Sum of all information content values
     ///     * **all** - list of float -
     ///       List with all information content values
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    ///
+    /// Examples
+    /// --------
     ///
     /// .. code block:: python
     ///
@@ -437,6 +513,15 @@ impl PyHpoSet {
     /// float
     ///     Similarity scores
     ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    /// AttributeError
+    ///     Invalid ``kind``
+    /// RuntimeError
+    ///     Invalid ``method`` or ``combine``
+    ///
     /// Examples
     /// --------
     ///
@@ -523,6 +608,15 @@ impl PyHpoSet {
     /// list[float]
     ///     Similarity scores for every comparison
     ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    /// KeyError
+    ///     Invalid ``kind``
+    /// RuntimeError
+    ///     Invalid ``method`` or ``combine``
+    ///
     /// Examples
     /// --------
     ///
@@ -577,6 +671,13 @@ impl PyHpoSet {
     /// Dict
     ///     Dict representation of all HPOTerms in the set
     ///     that can be used for JSON serialization
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    /// KeyError
+    ///     No HPO term is found for the provided query
     ///
     /// Examples
     /// --------
@@ -675,6 +776,13 @@ impl PyHpoSet {
     ///    The return type of this method will very likely change
     ///    into an Iterator of ``HPOTerm``. (:doc:`api_changes`)
     ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    /// KeyError
+    ///     No HPO term is found for the provided query
+    ///
     /// Examples
     /// --------
     ///
@@ -715,8 +823,12 @@ impl PyHpoSet {
     ///
     /// Raises
     /// ------
-    /// ValueError: query cannot be converted to HpoTermId
-    /// RuntimeError: query is a name and does not have a match in the Ontology
+    /// NameError
+    ///     Ontology not yet constructed
+    /// ValueError
+    ///     query cannot be converted to HpoTermId
+    /// RuntimeError
+    ///     No HPO term is found for the provided query
     ///
     ///
     /// Examples
@@ -761,8 +873,12 @@ impl PyHpoSet {
     ///
     /// Raises
     /// ------
-    /// ValueError: pickled item cannot be converted to HpoTermId
-    /// KeyError: pickeld item does not exist in the Ontology
+    /// NameError
+    ///     Ontology not yet constructed
+    /// ValueError
+    ///     pickled item cannot be converted to HpoTermId
+    /// KeyError
+    ///     No HPO term is found for the provided query
     ///
     /// Examples
     /// --------
@@ -807,6 +923,11 @@ impl PyHpoSet {
     /// :class:`pyhpo.HPOSet`
     ///     A new ``HPOSet``
     ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    ///
     /// Examples
     /// --------
     ///
@@ -820,7 +941,7 @@ impl PyHpoSet {
     ///
     #[classmethod]
     pub fn from_gene(_cls: &PyType, gene: &PyGene) -> PyResult<Self> {
-        gene.try_into()
+        Self::try_from(gene)
     }
 
     /// Instantiate an HPOSet from an Omim disease
@@ -835,6 +956,11 @@ impl PyHpoSet {
     /// :class:`pyhpo.HPOSet`
     ///     A new ``HPOSet``
     ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    ///
     /// Examples
     /// --------
     ///
@@ -848,7 +974,7 @@ impl PyHpoSet {
     ///
     #[classmethod]
     pub fn from_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<Self> {
-        disease.try_into()
+        Self::try_from(disease)
     }
 
     fn __len__(&self) -> usize {
@@ -900,6 +1026,10 @@ impl<'a> PyHpoSet {
 
 impl TryFrom<&PyGene> for PyHpoSet {
     type Error = PyErr;
+    /// Tries to create a `PyHpoSet` from a `PyGene`
+    ///
+    /// # Errors
+    /// - PyNameError: Ontology not yet created
     fn try_from(gene: &PyGene) -> Result<Self, Self::Error> {
         let ont = get_ontology()?;
         Ok(ont
@@ -912,6 +1042,10 @@ impl TryFrom<&PyGene> for PyHpoSet {
 
 impl TryFrom<&PyOmimDisease> for PyHpoSet {
     type Error = PyErr;
+    /// Tries to create a `PyHpoSet` from a `PyOmimDisease`
+    ///
+    /// # Errors
+    /// - PyNameError: Ontology not yet created
     fn try_from(disease: &PyOmimDisease) -> Result<Self, Self::Error> {
         let ont = get_ontology()?;
         Ok(ont
@@ -954,7 +1088,7 @@ impl Iter {
 pub(crate) struct BasicPyHpoSet;
 
 impl BasicPyHpoSet {
-    fn build<I: IntoIterator<Item = HpoTermId>>(ids: I) -> PyHpoSet {
+    fn build<I: IntoIterator<Item = HpoTermId>>(ids: I) -> Result<PyHpoSet, PyErr> {
         let ont = get_ontology().expect("Ontology must be initialized");
         let mut group = HpoGroup::new();
         for id in ids {
@@ -975,7 +1109,7 @@ impl BasicPyHpoSet {
 
 #[pymethods]
 impl BasicPyHpoSet {
-    fn __call__(&self, terms: Vec<u32>) -> PyHpoSet {
+    fn __call__(&self, terms: Vec<u32>) -> PyResult<PyHpoSet> {
         BasicPyHpoSet::build(terms.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 
@@ -985,33 +1119,29 @@ impl BasicPyHpoSet {
         for q in queries {
             ids.push(term_from_query(q)?.id());
         }
-        Ok(BasicPyHpoSet::build(ids))
+        BasicPyHpoSet::build(ids)
     }
 
     #[classmethod]
     fn from_serialized(_cls: &PyType, pickle: &str) -> PyResult<PyHpoSet> {
-        Ok(BasicPyHpoSet::build(
+        BasicPyHpoSet::build(
             pickle
                 .split('+')
                 .map(|id| id.parse::<u32>())
                 .collect::<Result<Vec<u32>, ParseIntError>>()?
                 .iter()
                 .map(|id| HpoTermId::from_u32(*id)),
-        ))
+        )
     }
 
     #[classmethod]
     pub fn from_gene(_cls: &PyType, gene: &PyGene) -> PyResult<PyHpoSet> {
-        Ok(BasicPyHpoSet::build(
-            gene.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)),
-        ))
+        BasicPyHpoSet::build(gene.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 
     #[classmethod]
     pub fn from_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<PyHpoSet> {
-        Ok(BasicPyHpoSet::build(
-            disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)),
-        ))
+        BasicPyHpoSet::build(disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 }
 
@@ -1020,7 +1150,7 @@ impl BasicPyHpoSet {
 pub(crate) struct PhenoSet;
 
 impl PhenoSet {
-    fn build<I: IntoIterator<Item = HpoTermId>>(ids: I) -> PyHpoSet {
+    fn build<I: IntoIterator<Item = HpoTermId>>(ids: I) -> Result<PyHpoSet, PyErr> {
         let ont = get_ontology().expect("Ontology must be initialized");
         let mut group = HpoGroup::new();
         for id in ids {
@@ -1040,7 +1170,7 @@ impl PhenoSet {
 
 #[pymethods]
 impl PhenoSet {
-    fn __call__(&self, terms: Vec<u32>) -> PyHpoSet {
+    fn __call__(&self, terms: Vec<u32>) -> PyResult<PyHpoSet> {
         PhenoSet::build(terms.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 
@@ -1050,32 +1180,28 @@ impl PhenoSet {
         for q in queries {
             ids.push(term_from_query(q)?.id());
         }
-        Ok(PhenoSet::build(ids))
+        PhenoSet::build(ids)
     }
 
     #[classmethod]
     fn from_serialized(_cls: &PyType, pickle: &str) -> PyResult<PyHpoSet> {
-        Ok(PhenoSet::build(
+        PhenoSet::build(
             pickle
                 .split('+')
                 .map(|id| id.parse::<u32>())
                 .collect::<Result<Vec<u32>, ParseIntError>>()?
                 .iter()
                 .map(|id| HpoTermId::from_u32(*id)),
-        ))
+        )
     }
 
     #[classmethod]
     pub fn from_gene(_cls: &PyType, gene: &PyGene) -> PyResult<PyHpoSet> {
-        Ok(PhenoSet::build(
-            gene.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)),
-        ))
+        PhenoSet::build(gene.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 
     #[classmethod]
     pub fn from_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<PyHpoSet> {
-        Ok(PhenoSet::build(
-            disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)),
-        ))
+        PhenoSet::build(disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 }

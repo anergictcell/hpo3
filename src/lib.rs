@@ -53,6 +53,10 @@ fn from_obo(path: &str) -> usize {
 /// Returns a reference to the Ontology
 ///
 /// This method only works **after** building the ontology
+///
+/// # Errors
+///
+/// - PyNameError: Ontology not yet constructed
 fn get_ontology() -> PyResult<&'static ActualOntology> {
     ONTOLOGY.get().ok_or_else(|| {
         pyo3::exceptions::PyNameError::new_err(
@@ -62,6 +66,11 @@ fn get_ontology() -> PyResult<&'static ActualOntology> {
 }
 
 /// Returns a [`PyHpoTerm`] from a `u32` ID
+///
+/// # Errors
+///
+/// - PyKeyError: No term with that ID present in Ontology
+/// - PyNameError: Ontology not yet constructed
 fn pyterm_from_id(id: u32) -> PyResult<PyHpoTerm> {
     let term = term_from_id(id)?;
     Ok(PyHpoTerm::new(term.id(), term.name().to_string()))
@@ -71,7 +80,8 @@ fn pyterm_from_id(id: u32) -> PyResult<PyHpoTerm> {
 ///
 /// # Errors
 ///
-/// PyKeyError: No term with that ID present in Ontology
+/// - PyKeyError: No term with that ID present in Ontology
+/// - PyNameError: Ontology not yet constructed
 fn term_from_id(id: u32) -> PyResult<hpo::HpoTerm<'static>> {
     let ont = get_ontology()?;
     match ont.hpo(id) {
@@ -84,8 +94,9 @@ fn term_from_id(id: u32) -> PyResult<hpo::HpoTerm<'static>> {
 ///
 /// # Errors
 ///
-/// PyValueError: query cannot be converted to HpoTermId
-/// PyRuntimeError: query is a name and does not have a match in the Ontology
+/// - PyValueError: query cannot be converted to HpoTermId
+/// - PyRuntimeError: query is a name and does not have a match in the Ontology
+/// - PyNameError: Ontology not yet constructed
 fn term_from_query(query: PyQuery) -> PyResult<HpoTerm<'static>> {
     match query {
         PyQuery::Id(id) => {
@@ -139,6 +150,7 @@ fn pyhpo(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyHpoSet>()?;
     m.add_class::<PyHpoTerm>()?;
     m.add_class::<PyEnrichmentModel>()?;
+    m.add_class::<PyInformationContent>()?;
     m.add_function(wrap_pyfunction!(linkage::linkage, m)?)?;
     m.add("Ontology", ont)?;
     m.add("BasicHPOSet", set::BasicPyHpoSet::default())?;
@@ -192,6 +204,15 @@ fn pyhpo(_py: Python, m: &PyModule) -> PyResult<()> {
 /// list[float]
 ///     The similarity scores of each comparison
 ///
+/// Raises
+/// ------
+/// NameError
+///     Ontology not yet constructed
+/// KeyError
+///     Invalid ``kind`` provided
+/// RuntimeError
+///     Invalid ``method`` or ``combine``
+///
 /// Examples
 /// --------
 ///
@@ -205,7 +226,6 @@ fn pyhpo(_py: Python, m: &PyModule) -> PyResult<()> {
 ///     gene_sets = [g.hpo_set() for g in Ontology.genes]
 ///     gene_set_combinations = [(a[0], a[1]) for a in itertools.combinations(gene_sets,2)]
 ///     similarities = helper.batch_set_similarity(gene_set_combinations[0:100], kind="omim", method="graphic", combine = "funSimAvg")
-///
 ///
 #[pyfunction]
 #[pyo3(signature = (comparisons, kind = "omim", method = "graphic", combine = "funSimAvg"))]
@@ -277,6 +297,13 @@ fn batch_set_similarity(
 /// list[float]
 ///     The similarity scores of each comparison
 ///
+/// Raises
+/// ------
+/// KeyError
+///     Invalid ``kind`` provided
+/// RuntimeError
+///     Invalid ``method``
+///
 /// Examples
 /// --------
 ///
@@ -333,6 +360,11 @@ fn batch_similarity(
 ///     The enrichment result for every gene.
 ///     See :func:`pyhpo.stats.EnrichmentModel.enrichment` for details
 ///
+/// Raises
+/// ------
+/// NameError
+///     Ontology not yet constructed
+///
 /// Examples
 /// --------
 ///
@@ -358,7 +390,6 @@ fn batch_similarity(
 ///     # >>> The top enriched genes for CODAS syndrome are: LONP1, (4.209128613268585e-80), EXTL3, (5.378742851736401e-23), SMC1A, (5.338807361962185e-22), FLNA, (1.0968887647112733e-21), COL2A1, (1.1029731783630839e-21)
 ///     # >>> The top enriched genes for Rhizomelic chondrodysplasia punctata, type 1 are: PEX7, (9.556919089648523e-54), PEX5, (7.030392607093173e-22), PEX1, (3.7973830291601626e-19), PEX11B, (4.318791413029623e-19), HSPG2, (7.108950838424571e-19)
 ///     # >>> The top enriched genes for Oculopharyngodistal myopathy 4 are: RILPL1, (1.4351489331895004e-49), LRP12, (2.168165858699749e-30), GIPC1, (3.180801819975307e-27), NOTCH2NLC, (1.0700847991253517e-23), VCP, (2.8742020666947536e-20)
-///
 ///
 #[pyfunction]
 fn batch_gene_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<Vec<&PyDict>>> {
@@ -402,6 +433,11 @@ fn batch_gene_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<Vec
 ///     The enrichment result for every disease.
 ///     See :func:`pyhpo.stats.EnrichmentModel.enrichment` for details
 ///
+/// Raises
+/// ------
+/// NameError
+///     Ontology not yet constructed
+///
 /// Examples
 /// --------
 ///
@@ -426,7 +462,6 @@ fn batch_gene_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<Vec
 ///     # >>> The top enriched diseases for C7 are: C7 deficiency, (3.6762699175625894e-42), C6 deficiency, (3.782313673973149e-37), C5 deficiency, (2.6614254464758174e-33), Complement factor B deficiency, (4.189056541495023e-32), Complement component 8 deficiency, type II, (8.87368759499919e-32)
 ///     # >>> The top enriched diseases for WNT5A are: Robinow syndrome, autosomal recessive, (0.0), Robinow syndrome, autosomal dominant 1, (0.0), Pallister-Killian syndrome, (1.2993558687813034e-238), Robinow syndrome, autosomal dominant 3, (1.2014167106834296e-223), Peters-plus syndrome, (2.5163107554882648e-216)
 ///     # >>> The top enriched diseases for TYMS are: Dyskeratosis congenita, X-linked, (5.008058437787544e-192), Dyskeratosis congenita, digenic, (2.703378203105612e-184), Dyskeratosis congenita, autosomal dominant 2, (1.3109083102058795e-150), Bloom syndrome, (3.965926308699221e-141), Dyskeratosis congenita, autosomal dominant 3, (1.123439117889186e-131)
-///
 ///
 #[pyfunction]
 fn batch_disease_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<Vec<&PyDict>>> {

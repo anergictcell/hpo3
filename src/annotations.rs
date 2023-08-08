@@ -82,6 +82,11 @@ impl PyGene {
     /// set(int)
     ///     A set of integers, representing the HPO-IDs
     ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    ///
     /// Examples
     /// --------
     ///
@@ -114,6 +119,11 @@ impl PyGene {
     /// :class:`pyhpo.HPOSet`
     ///     An ``HPOSet`` containing all associated ``HPOTerm``
     ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    ///
     /// Examples
     /// --------
     ///
@@ -143,7 +153,10 @@ impl PyGene {
     ///
     /// Raises
     /// ------
-    /// KeyError: No gene found for the query
+    /// NameError
+    ///     Ontology not yet constructed
+    /// KeyError
+    ///     No gene found for the query
     ///
     /// Examples
     /// --------
@@ -184,6 +197,11 @@ impl PyGene {
     /// -------
     /// Dict
     ///     Dict representation of the gene
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
     ///
     /// Examples
     /// --------
@@ -227,16 +245,21 @@ impl PyGene {
         self.__int__()
     }
 
+    /// Raises
+    /// ------
+    /// TypeError
+    ///     Invalid comparison. Only == and != is supported
+    ///
     fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
         match op {
+            CompareOp::Eq => Ok(self == other),
+            CompareOp::Ne => Ok(self != other),
             CompareOp::Lt => Err(PyTypeError::new_err(
                 "\"<\" is not supported for Gene instances",
             )),
             CompareOp::Le => Err(PyTypeError::new_err(
                 "\"<=\" is not supported for Gene instances",
             )),
-            CompareOp::Eq => Ok(self == other),
-            CompareOp::Ne => Ok(self != other),
             CompareOp::Gt => Err(PyTypeError::new_err(
                 "\">\" is not supported for Gene instances",
             )),
@@ -252,6 +275,7 @@ impl PartialEq for PyGene {
         self.id() == other.id()
     }
 }
+
 impl Eq for PyGene {}
 
 impl Hash for PyGene {
@@ -331,6 +355,11 @@ impl PyOmimDisease {
     /// set(int)
     ///     A set of integers, representing the HPO-IDs
     ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    ///
     /// Examples
     /// --------
     ///
@@ -362,6 +391,11 @@ impl PyOmimDisease {
     /// :class:`pyhpo.HPOSet`
     ///     An ``HPOSet`` containing all associated ``HPOTerm``
     ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    ///
     /// Examples
     /// --------
     ///
@@ -391,7 +425,10 @@ impl PyOmimDisease {
     ///
     /// Raises
     /// ------
-    /// KeyError: No disease found for the query
+    /// NameError
+    ///     Ontology not yet constructed
+    /// KeyError
+    ///     No disease found for the query
     ///
     /// Examples
     /// --------
@@ -422,6 +459,11 @@ impl PyOmimDisease {
     /// -------
     /// Dict
     ///     Dict representation of the Omim disease
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
     ///
     /// Examples
     /// --------
@@ -465,16 +507,21 @@ impl PyOmimDisease {
         self.__int__()
     }
 
+    /// Raises
+    /// ------
+    /// TypeError
+    ///     Invalid comparison. Only == and != is supported
+    ///
     fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
         match op {
+            CompareOp::Eq => Ok(self == other),
+            CompareOp::Ne => Ok(self != other),
             CompareOp::Lt => Err(PyTypeError::new_err(
                 "\"<\" is not supported for Omim instances",
             )),
             CompareOp::Le => Err(PyTypeError::new_err(
                 "\"<=\" is not supported for Omim instances",
             )),
-            CompareOp::Eq => Ok(self == other),
-            CompareOp::Ne => Ok(self != other),
             CompareOp::Gt => Err(PyTypeError::new_err(
                 "\">\" is not supported for Omim instances",
             )),
