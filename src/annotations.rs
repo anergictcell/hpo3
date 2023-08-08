@@ -141,7 +141,7 @@ impl PyGene {
 
     /// Returns a gene that matches the provided query
     ///
-    /// Paramaters
+    /// Parameters
     /// ----------
     /// query: str or int
     ///     A gene symbol of HGNC-ID
@@ -413,7 +413,7 @@ impl PyOmimDisease {
 
     /// Returns a gene that matches the provided query
     ///
-    /// Paramaters
+    /// Parameters
     /// ----------
     /// query: int
     ///     An Omim ID

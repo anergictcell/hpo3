@@ -122,6 +122,7 @@ class HPOPhenoSet:
 
 
 class Ontology:
+    def __init__(self, data_folder: str = "", from_obo_file: bool = True): ...
     # We're documenting the Ontology as if it were a static method,
     # because it is exposed as a Singleton and not as a class
     genes: Gene

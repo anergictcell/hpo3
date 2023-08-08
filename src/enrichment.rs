@@ -17,6 +17,31 @@ enum EnrichmentType {
 
 /// Calculate the hypergeometric enrichment of genes
 /// or diseases in a set of HPO terms
+///
+/// Parameters
+/// ----------
+/// category: str
+///     Specify ``gene`` or ``omim`` to determine which enrichments to calculate
+///
+/// Raises
+/// ------
+/// KeyError
+///     Invalid category, only ``gene`` or ``omim`` are possible
+///
+/// Examples
+/// --------
+///
+/// .. code-block:: python
+///
+///     from pyhpo import Ontology, Gene, Omim
+///     from pyhpo import stats
+///
+///     Ontology()
+///     model = stats.EnrichmentModel("omim")
+///
+///     # use the `model.enrichment` method to calculate
+///     # the enrichment of Omim Diseases within an HPOSet
+///
 #[pyclass(name = "EnrichmentModel")]
 #[derive(Clone)]
 pub(crate) struct PyEnrichmentModel {

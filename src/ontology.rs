@@ -426,7 +426,7 @@ impl PyOntology {
 
     /// Subset the Ontology to retrieve a single ``HPOTerm``
     ///
-    /// Paramaters
+    /// Parameters
     /// ----------
     /// id: int
     ///     The integer representation of the HPO-ID
