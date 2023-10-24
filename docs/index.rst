@@ -32,11 +32,26 @@ Table of Contents
 HPO3
 ====
 
-:math:`HPO_3`. is a Python module to work with the Human Phenotype Ontology (HPO). It can calculate similarities between individual terms or between sets of terms. It can also calculate the enrichment of gene or disease associations to a set of HPO terms.
+:math:`HPO_3`. is a Python library to work with the Human Phenotype Ontology (HPO). It can calculate similarities between individual terms or between sets of terms. It can also calculate the enrichment of gene or disease associations to a set of HPO terms.
 
-This library aims to be a drop-in replacement for `pyhpo <https://pypi.org/project/pyhpo/>`_, but is written in Rust and thus much much faster. Batchwise operations can also utilize multithreading, increasing the performance even more.
+
+Main features
+=============
+
+* 👫 Identify patient cohorts based on clinical features
+* 👨‍👧‍👦 Cluster patients or other clinical information for GWAS
+* 🩻→🧬 Phenotype to Genotype studies
+* 🍎🍊 HPO similarity analysis
+* 🕸️ Graph based analysis of phenotypes, genes and diseases
+* 🔗 Linkage calculation for dendogram analysis
+
+
+The library is helpful for discovery of novel gene-disease associations and GWAS data analysis studies. At the same time, it can be used for oragnize clinical information of patients in research or diagnostic settings.
+
+**hpo3** aims to be a drop-in replacement for `pyhpo <https://pypi.org/project/pyhpo/>`_, but is written in Rust and thus much much faster. Batchwise operations can also utilize multithreading, increasing the performance even more.
 
 .. hint::
+
    You can also check out the `documentation <https://pyhpo.readthedocs.io>`_ of `pyhpo <https://pypi.org/project/pyhpo/>`_, the API is almost 100% identical.
 
    hpo3 does have some extra functionality in the :doc:`helper` module.

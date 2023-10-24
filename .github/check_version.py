@@ -7,13 +7,12 @@ and that the version does not yet exist on PyPI
 
 
 import os
-import re
-import sys
-from pathlib import Path
-from typing import Optional
-import tomllib
 from urllib import request
 from urllib.error import HTTPError
+import re
+import sys
+import tomllib
+from typing import Optional
 
 
 def version_from_tag() -> Optional[str]:
