@@ -1,4 +1,3 @@
-import sys
 import unittest
 
 from pyhpo import Ontology
@@ -8,15 +7,15 @@ from pyhpo import annotations as an
 
 # Number of terms in HPO Ontology
 # grep "^\[Term\]$" pyhpo/data/hp.obo | wc -l
-N_TERMS = 17513
+N_TERMS = 18048
 
 # Number of genes in the annotation dataset
 # cut -f4 pyhpo/data/phenotype_to_genes.txt | grep -v "^#" | grep -v "^gene_symbol" | sort -u | wc -l  # noqa: E501
-N_GENES = 4917
+N_GENES = 5005
 
 # Number of OMIM diseases in the annotation dataset
 # cut -f1,3 pyhpo/data/phenotype.hpoa | grep "^OMIM" | sort -u | cut -f2 | grep -v "NOT" | wc -l  # noqa: E501
-N_OMIM = 8120
+N_OMIM = 8181
 
 
 class IntegrationFullTest(unittest.TestCase):
@@ -58,9 +57,6 @@ class IntegrationFullTest(unittest.TestCase):
         """
         genes = []
         omim = []
-        orpha = []
-        decipher = []
-        excluded_omim = []
         for term in self.terms:
             genes.append(len(term.genes))
             omim.append(len(term.omim_diseases))

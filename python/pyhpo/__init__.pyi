@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, Iterator, List, Set, Tuple
+from typing import Any, Collection, Dict, Iterable, Iterator, List, Set, Tuple
 
 from . import annotations as annotations
 from .annotations import Gene as Gene
@@ -125,8 +125,8 @@ class Ontology:
     def __init__(self, data_folder: str = "", from_obo_file: bool = True): ...
     # We're documenting the Ontology as if it were a static method,
     # because it is exposed as a Singleton and not as a class
-    genes: Iterator[Gene]
-    omim_diseases: Iterator[Omim]
+    genes: Collection[Gene]
+    omim_diseases: Collection[Omim]
     @staticmethod
     def get_hpo_object(query: str | int) -> HPOTerm: ...
     @staticmethod
