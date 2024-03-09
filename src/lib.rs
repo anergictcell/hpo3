@@ -153,8 +153,8 @@ fn pyhpo(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyInformationContent>()?;
     m.add_function(wrap_pyfunction!(linkage::linkage, m)?)?;
     m.add("Ontology", ont)?;
-    m.add("BasicHPOSet", set::BasicPyHpoSet::default())?;
-    m.add("HPOPhenoSet", set::PhenoSet::default())?;
+    m.add("BasicHPOSet", set::BasicPyHpoSet)?;
+    m.add("HPOPhenoSet", set::PhenoSet)?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add("__backend__", env!("CARGO_PKG_NAME"))?;
     m.add_function(wrap_pyfunction!(batch_similarity, m)?)?;
