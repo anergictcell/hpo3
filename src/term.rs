@@ -352,6 +352,58 @@ impl PyHpoTerm {
             .collect()
     }
 
+
+    /// Indicates if the term is flagged as obsolete
+    ///
+    /// Obsolete terms are ususally not linked to parents or children
+    /// and should not be used.
+    ///
+    /// In most cases, you can find a replacement using :func:`HPOTerm::replaced_by`
+    ///
+    /// Returns
+    /// -------
+    /// bool
+    ///     `True` if the term is obsolete
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     term = Ontology[10049]
+    ///     term.is_obsolete # ==> False
+    ///
+    #[getter(is_obsolete)]
+    fn is_obsolete(&self) -> bool {
+        self.hpo()
+            .is_obsolete()
+    }
+
+    /// Returns the replacement term name, if the term is obsolete
+    ///
+    /// Returns
+    /// -------
+    /// str
+    ///     The HPO term id, e.g. ``HP:0003026``
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     term = Ontology[100637]
+    ///     term.replaced_by # >> 'HP:0012720'
+    ///
+    #[getter(replaced_by)]
+    fn replaced_by(&self) -> Option<String> {
+        self.hpo()
+            .replaced_by().map(|term| term.id().to_string())
+    }
+
     /// Returns true if the term is a parent of ``other``
     ///
     /// Parameters
@@ -798,6 +850,29 @@ impl PyHpoTerm {
                 similarity.calculate(&term_a, &t2)
             })
             .collect())
+    }
+
+    /// Returns the replacement term, if the term is obsolete
+    ///
+    /// Returns
+    /// -------
+    /// :class:`HPOTerm`
+    ///     The HPOterm
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     term = Ontology[100637]
+    ///     replacement = term.replace()
+    ///     replacement.id # >> 'HP:0012720'
+    ///
+    fn replace(&self) -> Option<PyHpoTerm> {
+        self.hpo()
+            .replaced_by().map(PyHpoTerm::from)
     }
 
     /// Returns a dict/JSON representation the HPOTerm
