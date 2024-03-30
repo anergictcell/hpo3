@@ -64,7 +64,7 @@ use crate::{get_ontology, information_content::PyInformationContentKind, set::Py
 ///
 ///     * **funSimAvg** - Schlicker A, BMC Bioinformatics, (2006)
 ///     * **funSimMax** - Schlicker A, BMC Bioinformatics, (2006)
-///     * **BMA** - Deng Y, et. al., PLoS One, (2015)
+///     * **bwa** - Deng Y, et. al., PLoS One, (2015)
 ///
 /// Raises
 /// ------

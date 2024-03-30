@@ -601,7 +601,7 @@ impl PyHpoSet {
     ///
     ///     * **funSimAvg**
     ///     * **funSimMax**
-    ///     * **BMA**
+    ///     * **bwa**
     ///
     /// Returns
     /// -------
