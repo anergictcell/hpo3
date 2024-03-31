@@ -508,6 +508,16 @@ impl PyHpoSet {
     ///       Deng Y, et. al., PLoS One, (2015)
     ///     * **dist** - Distance between terms
     ///
+    /// combine: str, default ``funSimAvg``
+    ///     The method to combine individual term similarity
+    ///     to HPOSet similarities.
+    ///
+    ///     Available options:
+    ///
+    ///     * **funSimAvg**
+    ///     * **funSimMax**
+    ///     * **BMA**
+    ///
     /// Returns
     /// -------
     /// float
