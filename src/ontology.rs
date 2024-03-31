@@ -377,8 +377,11 @@ impl PyOntology {
     ///     Path to the source files (default: `./ontology.hpo`)
     /// binary: bool
     ///     Whether the input format is binary (default true)
-    #[pyo3(signature = (data_folder = "", from_obo_file = true))]
-    fn __call__(&self, data_folder: &str, from_obo_file: bool) {
+    /// transitive: bool
+    ///     Whether to associate HPOTerms transitively to genes.
+    ///     You must provide the `phenotype_to_genes.txt` input file.
+    #[pyo3(signature = (data_folder = "", from_obo_file = true, transitive = false))]
+    fn __call__(&self, data_folder: &str, from_obo_file: bool, transitive: bool) {
         if get_ontology().is_ok() {
             println!("The Ontology has been built before already");
             return;
@@ -386,7 +389,7 @@ impl PyOntology {
         if data_folder.is_empty() {
             from_builtin();
         } else if from_obo_file {
-            from_obo(data_folder);
+            from_obo(data_folder, transitive);
         } else {
             from_binary(data_folder);
         }

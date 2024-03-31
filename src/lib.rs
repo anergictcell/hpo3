@@ -44,8 +44,12 @@ fn from_builtin() -> usize {
 }
 
 /// Builds the ontology from the JAX download files
-fn from_obo(path: &str) -> usize {
-    let ont = ActualOntology::from_standard(path).unwrap();
+fn from_obo(path: &str, transitive: bool) -> usize {
+    let ont = if transitive {
+        ActualOntology::from_standard_transitive(path).unwrap()
+    } else {
+        ActualOntology::from_standard(path).unwrap()
+    };
     ONTOLOGY.set(ont).unwrap();
     ONTOLOGY.get().unwrap().len()
 }
