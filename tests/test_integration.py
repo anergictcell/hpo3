@@ -11,7 +11,8 @@ N_TERMS = 18697
 
 # Number of genes in the annotation dataset
 # cut -f4 pyhpo/data/phenotype_to_genes.txt | grep -v "^#" | grep -v "^gene_symbol" | sort -u | wc -l  # noqa: E501
-N_GENES = 5021
+# cut -f1 example_data/2024-03-06/genes_to_phenotype.txt | grep -v "^ncbi_gene_id" | sort -u | wc -l
+N_GENES = 5026
 
 # Number of OMIM diseases in the annotation dataset
 # cut -f1,3 pyhpo/data/phenotype.hpoa | grep "^OMIM" | sort -u | cut -f2 | grep -v "NOT" | wc -l  # noqa: E501
