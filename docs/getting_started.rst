@@ -50,8 +50,12 @@ If you require a newer version of the ontology, you can download the following f
 manually:
 
 - ``hp.obo`` (from https://hpo.jax.org/app/data/ontology)
-- ``phenotype_to_genes.txt`` (from https://hpo.jax.org/app/data/annotations)
+- ``genes_to_phenotype.txt`` (from https://hpo.jax.org/app/data/annotations)
 - ``phenotype.hpoa`` (from https://hpo.jax.org/app/data/annotations)
+
+Alternatively you can use ``phenotype_to_genes.txt`` (from https://hpo.jax.org/app/data/annotations),
+that way the HPOTerms are transitively linked to genes. See https://github.com/anergictcell/hpo/issues/44 for details.
+
 
 .. code-block:: python
 

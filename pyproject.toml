@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "hpo3"
-description = "A drop-in replacement for PyHPO using a Rust backend for faster performance"
+description = "A Python package to work with the HPO Ontology using a Rust backend for faster performance"
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [

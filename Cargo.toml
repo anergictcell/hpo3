@@ -1,6 +1,6 @@
 [package]
 name = "hpo3"
-version = "1.1.0"
+version = "1.2.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -10,6 +10,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.20.3", features = ["extension-module"] }
-hpo = "0.8.3"
+hpo = "0.9.1"
 rayon = "1.9.0"
 once_cell = "1.19"

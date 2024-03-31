@@ -1,20 +1,33 @@
+[![Documentation](https://readthedocs.org/projects/hpo3/badge/?version=stable)](https://hpo3.readthedocs.io/en/stable/)
+[![PyPi downloads](https://img.shields.io/pypi/dm/hpo3.svg?label=Pypi%20downloads)](https://pypi.org/project/hpo3/)
+[![Latest release](https://img.shields.io/pypi/v/hpo3?label=Latest%20Release)](https://pypi.org/project/hpo3/)
+
+
 # HPO3
 
-`hpo3` is a Rust based drop-in replacement of [`PyHPO`](https://pypi.org/project/pyhpo/). It is based on the [`hpo`](https://crates.io/crates/hpo) Rust library which is a performance optimzied implementation of `PyHPO`.
+**hpo3** is a Rust based drop-in replacement of [**PyHPO**](https://pypi.org/project/pyhpo/). It is based on the [**hpo**](https://crates.io/crates/hpo) Rust library which is a performance optimzied implementation of `PyHPO`.
 
-Using the Rust-based `hpo` library increases performance easily 100 fold for many operations. It enables developers to utilize multithreading, further improving performance greatly.
 
-`hpo3` aims to use the exact same API and methods as PyHPO to allow a very simple replacement for all analysis and statistics methods. However, it does not allow customization and modification of the ontology or individual terms, genes etc.
+## Main Features
 
-## Current status
-Most functionality of PyHPO is present and working, giving correct results. Similarity calculations and hypergeometric enrichment scores are implemented and working both for single terms and for HPOSets.
+- 👫 Identify patient cohorts based on clinical features
+- 👨‍👧‍👦 Cluster patients or other clinical information for GWAS
+- 🩻→🧬 Phenotype to Genotype studies
+- 🍎🍊 HPO similarity analysis
+- 🕸️ Graph based analysis of phenotypes, genes and diseases
+- 🔬 Enrichment analysis of genes or diseases
 
-There are some helper functions for parallel batchwise processing, which are amazing if you plan on analyzing large datasets.
+**hpo3** allows working on individual terms ``HPOTerm``, a set of terms ``HPOSet`` and the full ``Ontology``.
 
-If you need performance and speed for rapid experiments, give `hpo3` a try.
+The library is helpful for discovery of novel gene-disease associations and GWAS data analysis studies. At the same time, it can be used for oragnize clinical information of patients in research or diagnostic settings.
+
+Using the Rust-based [**hpo**](https://crates.io/crates/hpo) library gives super fast performance that allows large analyses. It enables developers to utilize multithreading, further improving performance greatly.
+
+**hpo3** aims to use the exact same API and methods as [PyHPO](https://pypi.org/project/pyhpo/) to allow a very simple replacement for all analysis and statistics methods. However, it does not allow customization and modification of the ontology or individual terms, genes etc.
+
 
 ## Installation
-HPO3 is provided as binary wheels for most platforms on PyPI, so in most cases you can just run
+HPO3 is provided as binary wheels for most platforms on [PyPI](https://pypi.org/project/hpo3/), so in most cases you can just run
 ```bash
 pip install hpo3
 ```
@@ -120,7 +133,7 @@ HP:0040064 | Abnormality of limbs
 Check out the [hpo3 documentation](https://hpo3.readthedocs.io/en/latest/)
 
 ## Parallel processing
-`hpo3` is using Rust as backend, so it's able to fully utilize parallel processing. To benefit from this even greater, `hpo3` provides some special helper functions for parallel batch processing in the `helper` submodule
+**hpo3** is using Rust as backend, so it's able to fully utilize parallel processing. To benefit from this even greater, `hpo3` provides some special helper functions for parallel batch processing in the `helper` submodule
 
 ### Similarity scores of HPOSets
 Pairwise similarity comparison of `HPOSet`s. Specify a list of comparisons to run and `hpo3` calculates the result using all available CPUs.
@@ -294,7 +307,7 @@ disease_enrichments = batch_disease_enrichment(hpo_sets)
 ```
 
 ## Development
-HPO3 is completely written in Rust, so you require a stable Rust toolchain:
+**hpo3** is completely written in Rust, so you require a stable Rust toolchain:
 
 Rust installation instructions as [on the official website](https://www.rust-lang.org/tools/install):
 
