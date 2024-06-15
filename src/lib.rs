@@ -1,3 +1,4 @@
+use annotations::PyOrphaDisease;
 use once_cell::sync::OnceCell;
 
 use rayon::prelude::*;
@@ -6,11 +7,11 @@ use pyo3::exceptions::{PyKeyError, PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use hpo::annotations::{AnnotationId, GeneId, OmimDiseaseId};
+use hpo::annotations::{AnnotationId, GeneId, OmimDiseaseId, OrphaDiseaseId};
 use hpo::similarity::{GroupSimilarity, Similarity, StandardCombiner};
-use hpo::stats::hypergeom::{disease_enrichment, gene_enrichment};
+use hpo::stats::hypergeom::{gene_enrichment, omim_disease_enrichment, orpha_disease_enrichment};
 use hpo::term::HpoTermId;
-use hpo::{HpoTerm, Ontology as ActualOntology};
+use hpo::{HpoResult, HpoTerm, Ontology as ActualOntology};
 
 mod annotations;
 mod enrichment;
@@ -44,14 +45,14 @@ fn from_builtin() -> usize {
 }
 
 /// Builds the ontology from the JAX download files
-fn from_obo(path: &str, transitive: bool) -> usize {
+fn from_obo(path: &str, transitive: bool) -> HpoResult<usize> {
     let ont = if transitive {
-        ActualOntology::from_standard_transitive(path).unwrap()
+        ActualOntology::from_standard_transitive(path)?
     } else {
-        ActualOntology::from_standard(path).unwrap()
+        ActualOntology::from_standard(path)?
     };
     ONTOLOGY.set(ont).unwrap();
-    ONTOLOGY.get().unwrap().len()
+    Ok(ONTOLOGY.get().unwrap().len())
 }
 
 /// Returns a reference to the Ontology
@@ -151,6 +152,7 @@ fn pyhpo(_py: Python, m: &PyModule) -> PyResult<()> {
     let ont = PyOntology::blank();
     m.add_class::<PyGene>()?;
     m.add_class::<PyOmimDisease>()?;
+    m.add_class::<PyOrphaDisease>()?;
     m.add_class::<PyHpoSet>()?;
     m.add_class::<PyHpoTerm>()?;
     m.add_class::<PyEnrichmentModel>()?;
@@ -165,6 +167,8 @@ fn pyhpo(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(batch_set_similarity, m)?)?;
     m.add_function(wrap_pyfunction!(batch_gene_enrichment, m)?)?;
     m.add_function(wrap_pyfunction!(batch_disease_enrichment, m)?)?;
+    m.add_function(wrap_pyfunction!(batch_omim_disease_enrichment, m)?)?;
+    m.add_function(wrap_pyfunction!(batch_orpha_disease_enrichment, m)?)?;
     Ok(())
 }
 
@@ -183,6 +187,7 @@ fn pyhpo(_py: Python, m: &PyModule) -> PyResult<()> {
 ///     Available options:
 ///
 ///     * **omim**
+///     * **orpha**
 ///     * **gene**
 ///
 /// method: str, default ``graphic``
@@ -276,6 +281,7 @@ fn batch_set_similarity(
 ///     Available options:
 ///
 ///     * **omim**
+///     * **orpha**
 ///     * **gene**
 ///
 /// method: str, default ``graphic``
@@ -417,11 +423,20 @@ fn batch_gene_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<Vec
         .collect::<PyResult<Vec<Vec<&PyDict>>>>()
 }
 
-/// Calculate enriched diseases in a list of ``HPOSet``
+/// Deprecated since 1.3.0
+///
+/// Use :func:`pyhpo.helper.batch_omim_disease_enrichment` or
+/// :func:`pyhpo.helper.batch_orpha_disease_enrichment` instead
+#[pyfunction]
+fn batch_disease_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<Vec<&PyDict>>> {
+    batch_omim_disease_enrichment(py, hposets)
+}
+
+/// Calculate enriched Omim diseases in a list of ``HPOSet``
 ///
 /// This method runs parallelized on all avaible CPU
 ///
-/// Calculate the hypergeometric enrichment of diseases associated to the terms
+/// Calculate the hypergeometric enrichment of Omim diseases associated to the terms
 /// of each set. Each set is calculated individually, the returning list has
 /// the same order as the input data.
 ///
@@ -453,7 +468,7 @@ fn batch_gene_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<Vec
 ///
 ///     genes = [g for g in Ontology.genes[0:100]]
 ///     gene_sets = [g.hpo_set() for g in genes]
-///     enrichments = helper.batch_disease_enrichment(gene_sets)
+///     enrichments = helper.batch_omim_disease_enrichment(gene_sets)
 ///
 ///     for (gene, enriched_diseases) in zip(genes, enrichments):
 ///         print(
@@ -468,12 +483,15 @@ fn batch_gene_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<Vec
 ///     # >>> The top enriched diseases for TYMS are: Dyskeratosis congenita, X-linked, (5.008058437787544e-192), Dyskeratosis congenita, digenic, (2.703378203105612e-184), Dyskeratosis congenita, autosomal dominant 2, (1.3109083102058795e-150), Bloom syndrome, (3.965926308699221e-141), Dyskeratosis congenita, autosomal dominant 3, (1.123439117889186e-131)
 ///
 #[pyfunction]
-fn batch_disease_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<Vec<&PyDict>>> {
+fn batch_omim_disease_enrichment(
+    py: Python,
+    hposets: Vec<PyHpoSet>,
+) -> PyResult<Vec<Vec<&PyDict>>> {
     let ont = get_ontology()?;
     let enrichments = hposets
         .par_iter()
         .map(|pyset| {
-            let mut enrichment = disease_enrichment(ont, &pyset.set(ont));
+            let mut enrichment = omim_disease_enrichment(ont, &pyset.set(ont));
             enrichment.sort_by(|a, b| a.pvalue().partial_cmp(&b.pvalue()).unwrap());
             enrichment
         })
@@ -483,7 +501,82 @@ fn batch_disease_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<
         .iter()
         .map(|set| {
             set.iter()
-                .map(|enrichment| crate::enrichment::disease_enrichment_dict(py, enrichment))
+                .map(|enrichment| crate::enrichment::omim_disease_enrichment_dict(py, enrichment))
+                .collect::<PyResult<Vec<&PyDict>>>()
+        })
+        .collect::<PyResult<Vec<Vec<&PyDict>>>>()
+}
+
+/// Calculate enriched Orpha diseases in a list of ``HPOSet``
+///
+/// This method runs parallelized on all avaible CPU
+///
+/// Calculate the hypergeometric enrichment of Orpha diseases associated to the terms
+/// of each set. Each set is calculated individually, the returning list has
+/// the same order as the input data.
+///
+/// Parameters
+/// ----------
+/// hposets: list[:class:`pyhpo.HPOSet`]
+///     A list of HPOSets. The enrichment of all diseases is calculated separately
+///     for each HPOset in the list
+///
+/// Returns
+/// -------
+/// list[dict]
+///     The enrichment result for every disease.
+///     See :func:`pyhpo.stats.EnrichmentModel.enrichment` for details
+///
+/// Raises
+/// ------
+/// NameError
+///     Ontology not yet constructed
+///
+/// Examples
+/// --------
+///
+/// .. code-block:: python
+///
+///     from pyhpo import Ontology, helper
+///
+///     Ontology()
+///
+///     genes = [g for g in Ontology.genes[0:100]]
+///     gene_sets = [g.hpo_set() for g in genes]
+///     enrichments = helper.batch_orpha_disease_enrichment(gene_sets)
+///
+///     for (gene, enriched_diseases) in zip(genes, enrichments):
+///         print(
+///             "The top enriched diseases for {} are: {}".format(
+///                 gene.name,
+///                 ", ".join([f"{disease['item'].name}, ({disease['enrichment']})" for disease in enriched_diseases[0:5]])
+///             )
+///         )
+///
+///     # >>> The top enriched diseases for C7 are: C7 deficiency, (3.6762699175625894e-42), C6 deficiency, (3.782313673973149e-37), C5 deficiency, (2.6614254464758174e-33), Complement factor B deficiency, (4.189056541495023e-32), Complement component 8 deficiency, type II, (8.87368759499919e-32)
+///     # >>> The top enriched diseases for WNT5A are: Robinow syndrome, autosomal recessive, (0.0), Robinow syndrome, autosomal dominant 1, (0.0), Pallister-Killian syndrome, (1.2993558687813034e-238), Robinow syndrome, autosomal dominant 3, (1.2014167106834296e-223), Peters-plus syndrome, (2.5163107554882648e-216)
+///     # >>> The top enriched diseases for TYMS are: Dyskeratosis congenita, X-linked, (5.008058437787544e-192), Dyskeratosis congenita, digenic, (2.703378203105612e-184), Dyskeratosis congenita, autosomal dominant 2, (1.3109083102058795e-150), Bloom syndrome, (3.965926308699221e-141), Dyskeratosis congenita, autosomal dominant 3, (1.123439117889186e-131)
+///
+#[pyfunction]
+fn batch_orpha_disease_enrichment(
+    py: Python,
+    hposets: Vec<PyHpoSet>,
+) -> PyResult<Vec<Vec<&PyDict>>> {
+    let ont = get_ontology()?;
+    let enrichments = hposets
+        .par_iter()
+        .map(|pyset| {
+            let mut enrichment = orpha_disease_enrichment(ont, &pyset.set(ont));
+            enrichment.sort_by(|a, b| a.pvalue().partial_cmp(&b.pvalue()).unwrap());
+            enrichment
+        })
+        .collect::<Vec<Vec<hpo::stats::Enrichment<OrphaDiseaseId>>>>();
+
+    enrichments
+        .iter()
+        .map(|set| {
+            set.iter()
+                .map(|enrichment| crate::enrichment::orpha_disease_enrichment_dict(py, enrichment))
                 .collect::<PyResult<Vec<&PyDict>>>()
         })
         .collect::<PyResult<Vec<Vec<&PyDict>>>>()

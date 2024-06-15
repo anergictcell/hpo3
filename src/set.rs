@@ -7,11 +7,12 @@ use pyo3::exceptions::{PyAttributeError, PyRuntimeError};
 use pyo3::types::PyDict;
 use pyo3::{prelude::*, types::PyType};
 
-use hpo::annotations::AnnotationId;
+use hpo::annotations::{AnnotationId, Disease};
 use hpo::similarity::{GroupSimilarity, StandardCombiner};
 use hpo::Ontology;
 use hpo::{term::HpoGroup, HpoSet, HpoTermId};
 
+use crate::annotations::PyOrphaDisease;
 use crate::term::PyHpoTerm;
 use crate::{
     annotations::{PyGene, PyOmimDisease},
@@ -326,8 +327,8 @@ impl PyHpoSet {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     gene = list(Ontology.genes)[0]
-    ///     for disease in disease.omim_diseases():
+    ///     gene_set = list(Ontology.genes)[0].hpo_set()
+    ///     for disease in gene_set.omim_diseases():
     ///         print(disease.name)
     ///
     fn omim_diseases(&self) -> PyResult<HashSet<PyOmimDisease>> {
@@ -337,6 +338,43 @@ impl PyHpoSet {
             .iter()
             .fold(HashSet::new(), |mut set, disease_id| {
                 set.insert(PyOmimDisease::from(ont.omim_disease(disease_id).expect(
+                    "disease must be present in ontology if it is connected to a term",
+                )));
+                set
+            }))
+    }
+
+    /// Returns a set of associated diseases
+    ///
+    /// Returns
+    /// -------
+    /// set[:class:`pyhpo.Orpha`]
+    ///     The union of Orpha diseases associated with terms
+    ///     in the ``HPOSet``
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     gene_set = list(Ontology.genes)[0].hpo_set()
+    ///     for disease in gene_set.orpha_diseases():
+    ///         print(disease.name)
+    ///
+    fn orpha_diseases(&self) -> PyResult<HashSet<PyOrphaDisease>> {
+        let ont = get_ontology()?;
+        Ok(HpoSet::new(ont, self.ids.clone())
+            .orpha_disease_ids()
+            .iter()
+            .fold(HashSet::new(), |mut set, disease_id| {
+                set.insert(PyOrphaDisease::from(ont.orpha_disease(disease_id).expect(
                     "disease must be present in ontology if it is connected to a term",
                 )));
                 set
@@ -377,7 +415,7 @@ impl PyHpoSet {
     ///     Ontology()
     ///     
     ///     my_set = list(Ontology.genes)[0].hpo_set()
-    ///     my_set.information_content
+    ///     my_set.information_content()
     ///     # >> {
     ///     # >>     'mean': 3.0313432216644287,
     ///     # >>     'total': 357.698486328125,
@@ -488,6 +526,7 @@ impl PyHpoSet {
     ///     Available options:
     ///
     ///     * **omim**
+    ///     * **orpha**
     ///     * **gene**
     ///
     /// method: str, default ``graphic``
@@ -583,6 +622,7 @@ impl PyHpoSet {
     ///     Available options:
     ///
     ///     * **omim**
+    ///     * **orpha**
     ///     * **gene**
     ///
     /// method: str, default ``graphic``
@@ -694,7 +734,7 @@ impl PyHpoSet {
     ///
     /// .. code-block:: python
     ///
-    ///     from pyhpo import Ontology
+    ///     from pyhpo import Ontology, HPOSet
     ///     Ontology()
     ///     my_set = HPOSet.from_serialized("7+118+152+234+271+315+478+479+492+496")
     ///     my_set.toJSON()
@@ -954,6 +994,13 @@ impl PyHpoSet {
         Self::try_from(gene)
     }
 
+    /// Deprecated since 1.3.0
+    /// Use :func:`pyhpo.HPOSet.from_omim_disease` instead
+    #[classmethod]
+    pub fn from_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<Self> {
+        Self::try_from(disease)
+    }
+
     /// Instantiate an HPOSet from an Omim disease
     ///
     /// Parameters
@@ -978,12 +1025,45 @@ impl PyHpoSet {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     disease_set = HPOSet.from_disease(Ontology.omim_diseases[0])
+    ///     disease_set = HPOSet.from_omim_disease(Ontology.omim_diseases[0])
     ///     len(disease_set)
     ///     # >> 18
     ///
     #[classmethod]
-    pub fn from_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<Self> {
+    pub fn from_omim_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<Self> {
+        Self::try_from(disease)
+    }
+
+    /// Instantiate an HPOSet from an Orpha disease
+    ///
+    /// Parameters
+    /// ----------
+    /// gene: :class:`pyhpo.Orpha`
+    ///     An Orpha disease from the ontology
+    ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.HPOSet`
+    ///     A new ``HPOSet``
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     disease_set = HPOSet.from_orpha_disease(Ontology.orpha_diseases[0])
+    ///     len(disease_set)
+    ///     # >> 18
+    ///
+    #[classmethod]
+    pub fn from_orpha_disease(_cls: &PyType, disease: &PyOrphaDisease) -> PyResult<Self> {
         Self::try_from(disease)
     }
 
@@ -1060,6 +1140,22 @@ impl TryFrom<&PyOmimDisease> for PyHpoSet {
         let ont = get_ontology()?;
         Ok(ont
             .omim_disease(&disease.id().into())
+            .expect("ontology must. be present and gene must be included")
+            .to_hpo_set(ont)
+            .into())
+    }
+}
+
+impl TryFrom<&PyOrphaDisease> for PyHpoSet {
+    type Error = PyErr;
+    /// Tries to create a `PyHpoSet` from a `PyOrphaDisease`
+    ///
+    /// # Errors
+    /// - PyNameError: Ontology not yet created
+    fn try_from(disease: &PyOrphaDisease) -> Result<Self, Self::Error> {
+        let ont = get_ontology()?;
+        Ok(ont
+            .orpha_disease(&disease.id().into())
             .expect("ontology must. be present and gene must be included")
             .to_hpo_set(ont)
             .into())
@@ -1149,8 +1245,19 @@ impl BasicPyHpoSet {
         BasicPyHpoSet::build(gene.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 
+    /// Deprecated since 1.3.0
     #[classmethod]
     pub fn from_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<PyHpoSet> {
+        BasicPyHpoSet::build(disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
+    }
+
+    #[classmethod]
+    pub fn from_omim_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<PyHpoSet> {
+        BasicPyHpoSet::build(disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
+    }
+
+    #[classmethod]
+    pub fn from_orpha_disease(_cls: &PyType, disease: &PyOrphaDisease) -> PyResult<PyHpoSet> {
         BasicPyHpoSet::build(disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 }
@@ -1210,8 +1317,19 @@ impl PhenoSet {
         PhenoSet::build(gene.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 
+    /// Deprecated since 1.3.0
     #[classmethod]
     pub fn from_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<PyHpoSet> {
+        PhenoSet::build(disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
+    }
+
+    #[classmethod]
+    pub fn from_omim_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<PyHpoSet> {
+        PhenoSet::build(disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
+    }
+
+    #[classmethod]
+    pub fn from_orpha_disease(_cls: &PyType, disease: &PyOrphaDisease) -> PyResult<PyHpoSet> {
         PhenoSet::build(disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 }

@@ -1,11 +1,12 @@
+use hpo::annotations::{Disease, OrphaDiseaseId};
 use hpo::annotations::{GeneId, OmimDiseaseId};
 use pyo3::exceptions::PyNotImplementedError;
 use pyo3::types::PyDict;
 use pyo3::{exceptions::PyKeyError, prelude::*};
 
-use hpo::stats::hypergeom::{disease_enrichment, gene_enrichment};
+use hpo::stats::hypergeom::{gene_enrichment, omim_disease_enrichment, orpha_disease_enrichment};
 
-use crate::annotations::{PyGene, PyOmimDisease};
+use crate::annotations::{PyGene, PyOmimDisease, PyOrphaDisease};
 use crate::get_ontology;
 use crate::set::PyHpoSet;
 
@@ -13,6 +14,7 @@ use crate::set::PyHpoSet;
 enum EnrichmentType {
     Gene,
     Omim,
+    Orpha,
 }
 
 /// Calculate the hypergeometric enrichment of genes
@@ -21,12 +23,12 @@ enum EnrichmentType {
 /// Parameters
 /// ----------
 /// category: str
-///     Specify ``gene`` or ``omim`` to determine which enrichments to calculate
+///     Specify ``gene``, ``omim`` or ``orpha`` to determine which enrichments to calculate
 ///
 /// Raises
 /// ------
 /// KeyError
-///     Invalid category, only ``gene`` or ``omim`` are possible
+///     Invalid category, only ``gene``, ``omim`` or ``orpha`` are possible
 ///
 /// Examples
 /// --------
@@ -51,17 +53,17 @@ pub(crate) struct PyEnrichmentModel {
 #[pymethods]
 impl PyEnrichmentModel {
     /// Returns a new `EnrichmentModel` to calculate enrichment
-    /// for either Genes or Omim Diseases
+    /// for either Genes, Omim or Orpha Diseases
     ///
     /// Parameters
     /// ----------
     /// category: str
-    ///     Specify ``gene`` or ``omim`` to determine which enrichments to calculate
+    ///     Specify ``gene``, ``omim`` or ``orpha`` to determine which enrichments to calculate
     ///
     /// Raises
     /// ------
     /// KeyError
-    ///     Invalid category, only ``gene`` or ``omim`` are possible
+    ///     Invalid category, only ``gene``, ``omim`` or ``orpha`` are possible
     ///
     /// Examples
     /// --------
@@ -82,6 +84,7 @@ impl PyEnrichmentModel {
         let kind = match category {
             "gene" => EnrichmentType::Gene,
             "omim" => EnrichmentType::Omim,
+            "orpha" => EnrichmentType::Orpha,
             _ => return Err(PyKeyError::new_err("kind")),
         };
         Ok(PyEnrichmentModel { kind })
@@ -108,7 +111,7 @@ impl PyEnrichmentModel {
     ///         The fold enrichment
     ///     * **count** : `int`
     ///         Number of occurrences
-    ///     * **item** : `Gene` :class:`pyhpo.Gene` or :class:`pyhpo.Omim`
+    ///     * **item** : `Gene` :class:`pyhpo.Gene`, :class:`pyhpo.Omim` or :class:`pyhpo.Orpha`
     ///         The actual enriched gene or disease
     ///
     /// Raises
@@ -172,10 +175,17 @@ impl PyEnrichmentModel {
                     .collect::<PyResult<Vec<&PyDict>>>()
             }
             EnrichmentType::Omim => {
-                let mut enr = disease_enrichment(ont, &set);
+                let mut enr = omim_disease_enrichment(ont, &set);
                 enr.sort_by(|a, b| a.pvalue().partial_cmp(&b.pvalue()).unwrap());
                 enr.iter()
-                    .map(|enrichment| disease_enrichment_dict(py, enrichment))
+                    .map(|enrichment| omim_disease_enrichment_dict(py, enrichment))
+                    .collect::<PyResult<Vec<&PyDict>>>()
+            }
+            EnrichmentType::Orpha => {
+                let mut enr = orpha_disease_enrichment(ont, &set);
+                enr.sort_by(|a, b| a.pvalue().partial_cmp(&b.pvalue()).unwrap());
+                enr.iter()
+                    .map(|enrichment| orpha_disease_enrichment_dict(py, enrichment))
                     .collect::<PyResult<Vec<&PyDict>>>()
             }
         };
@@ -188,7 +198,7 @@ impl PyEnrichmentModel {
 /// # Errors
 ///
 /// - PyNameError: Ontology not yet constructed
-pub(crate) fn disease_enrichment_dict<'a, T>(
+pub(crate) fn omim_disease_enrichment_dict<'a, T>(
     py: Python<'a>,
     enrichment: &hpo::stats::Enrichment<T>,
 ) -> PyResult<&'a PyDict>
@@ -198,6 +208,30 @@ where
     let disease = get_ontology()?
         .omim_disease(&OmimDiseaseId::from(enrichment.id().as_u32()))
         .map(|d| PyOmimDisease::new(*d.id(), d.name().into()))
+        .unwrap();
+    let dict = PyDict::new(py);
+    dict.set_item("enrichment", enrichment.pvalue())?;
+    dict.set_item("fold", enrichment.enrichment())?;
+    dict.set_item("count", enrichment.count())?;
+    dict.set_item("item", disease.into_py(py))?;
+    Ok(dict)
+}
+
+/// Returns the disease enrichment data as a Python dict
+///
+/// # Errors
+///
+/// - PyNameError: Ontology not yet constructed
+pub(crate) fn orpha_disease_enrichment_dict<'a, T>(
+    py: Python<'a>,
+    enrichment: &hpo::stats::Enrichment<T>,
+) -> PyResult<&'a PyDict>
+where
+    T: std::fmt::Display + hpo::annotations::AnnotationId,
+{
+    let disease = get_ontology()?
+        .orpha_disease(&OrphaDiseaseId::from(enrichment.id().as_u32()))
+        .map(|d| PyOrphaDisease::new(*d.id(), d.name().into()))
         .unwrap();
     let dict = PyDict::new(py);
     dict.set_item("enrichment", enrichment.pvalue())?;

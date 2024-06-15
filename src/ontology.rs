@@ -1,5 +1,8 @@
+use hpo::annotations::Disease;
 use std::collections::VecDeque;
 
+use hpo::HpoError;
+use pyo3::exceptions::PyFileNotFoundError;
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 use pyo3::PyResult;
@@ -7,6 +10,7 @@ use pyo3::PyResult;
 use hpo::annotations::AnnotationId;
 
 use crate::annotations::PyOmimDisease;
+use crate::annotations::PyOrphaDisease;
 use crate::from_builtin;
 use crate::{from_binary, from_obo, get_ontology, pyterm_from_id, term_from_query, PyQuery};
 
@@ -76,6 +80,34 @@ impl PyOntology {
         let mut res = Vec::new();
         for disease in ont.omim_diseases() {
             res.push(PyOmimDisease::new(*disease.id(), disease.name().into()))
+        }
+        Ok(res)
+    }
+
+    /// A list of all Orpha Diseases included in the ontology
+    ///
+    /// Returns
+    /// -------
+    /// list[:class:`pyhpo.Orpha`]
+    ///     All Orpha diseases that are associated to the :class:`pyhpo.HPOTerm` in the ontology
+    ///
+    ///
+    /// .. important::
+    ///
+    ///    The return type of this method will very likely change
+    ///    into an Iterator of ``Orpha``. (:doc:`api_changes`)
+    ///
+    /// Raises
+    /// ------
+    ///
+    /// NameError: Ontology not yet constructed
+    #[getter(orpha_diseases)]
+    fn orpha_diseases(&self) -> PyResult<Vec<PyOrphaDisease>> {
+        let ont = get_ontology()?;
+
+        let mut res = Vec::new();
+        for disease in ont.orpha_diseases() {
+            res.push(PyOrphaDisease::new(*disease.id(), disease.name().into()))
         }
         Ok(res)
     }
@@ -381,17 +413,36 @@ impl PyOntology {
     ///     Whether to associate HPOTerms transitively to genes.
     ///     You must provide the `phenotype_to_genes.txt` input file.
     #[pyo3(signature = (data_folder = "", from_obo_file = true, transitive = false))]
-    fn __call__(&self, data_folder: &str, from_obo_file: bool, transitive: bool) {
+    fn __call__(&self, data_folder: &str, from_obo_file: bool, transitive: bool) -> PyResult<()> {
         if get_ontology().is_ok() {
             println!("The Ontology has been built before already");
-            return;
+            return Ok(());
         }
         if data_folder.is_empty() {
             from_builtin();
+            Ok(())
         } else if from_obo_file {
-            from_obo(data_folder, transitive);
+            match from_obo(data_folder, transitive) {
+                Ok(_) => return Ok(()),
+                Err(HpoError::CannotOpenFile(filename)) => {
+                    if filename.ends_with("genes_to_phenotype.txt") {
+                        return Err(PyFileNotFoundError::new_err("Starting with v1.2.0, hpo3 changed the way \
+                            how the ontology is build from JAX-OBO source. It now requires the `genes_to_phenotype.txt` \
+                            file. Please check the documentation for more info or add the `transitive=True` argument."));
+                    }
+                    return Err(PyFileNotFoundError::new_err(
+                        format!("Unable to open {filename}. Please check if you specified the correct path and all files are present.")
+                    ));
+                }
+                Err(err) => {
+                    return Err(PyRuntimeError::new_err(format!(
+                        "Error loading the ontology. Please check if the data is correct: {err}"
+                    )));
+                }
+            }
         } else {
             from_binary(data_folder);
+            return Ok(());
         }
     }
 

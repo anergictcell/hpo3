@@ -7,6 +7,7 @@ use pyo3::PyResult;
 #[pyclass(name = "InformationContent")]
 pub struct PyInformationContent {
     omim: f32,
+    orpha: f32,
     gene: f32,
 }
 
@@ -14,6 +15,7 @@ impl From<&hpo::term::InformationContent> for PyInformationContent {
     fn from(value: &hpo::term::InformationContent) -> Self {
         Self {
             omim: value.omim_disease(),
+            orpha: value.orpha_disease(),
             gene: value.gene(),
         }
     }
@@ -32,10 +34,16 @@ impl PyInformationContent {
     pub fn omim(&self) -> f32 {
         self.omim
     }
+    /// Returns the Orpha disease - based information content
+    #[getter(orpha)]
+    pub fn orpha(&self) -> f32 {
+        self.orpha
+    }
 
     fn __getitem__(&self, key: &str) -> PyResult<f32> {
         match key {
             "omim" => Ok(self.omim()),
+            "orpha" => Ok(self.orpha()),
             "gene" => Ok(self.gene()),
             _ => Err(PyKeyError::new_err(format!("Unknown key {}", key))),
         }
@@ -43,9 +51,10 @@ impl PyInformationContent {
 
     fn __repr__(&self) -> String {
         format!(
-            "<InformationContent (Omim: {:.4}, Gene: {:.4})>",
+            "<InformationContent (Omim: {:.4}, Oprha: {:.4}, Gene: {:.4})>",
+            self.omim(),
+            self.orpha(),
             self.gene(),
-            self.omim()
         )
     }
 }
@@ -54,6 +63,7 @@ impl PyInformationContent {
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum PyInformationContentKind {
     Omim,
+    Orpha,
     Gene,
 }
 
@@ -64,6 +74,7 @@ impl TryFrom<&str> for PyInformationContentKind {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value {
             "omim" => Ok(PyInformationContentKind::Omim),
+            "orpha" => Ok(PyInformationContentKind::Orpha),
             "gene" => Ok(PyInformationContentKind::Gene),
             _ => Err(PyKeyError::new_err(format!(
                 "Unknown information content kind {}",
@@ -77,6 +88,7 @@ impl From<PyInformationContentKind> for hpo::term::InformationContentKind {
     fn from(value: PyInformationContentKind) -> Self {
         match value {
             PyInformationContentKind::Omim => Self::Omim,
+            PyInformationContentKind::Orpha => Self::Orpha,
             PyInformationContentKind::Gene => Self::Gene,
         }
     }

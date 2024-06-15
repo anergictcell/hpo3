@@ -7,16 +7,20 @@ from pyhpo import annotations as an
 
 # Number of terms in HPO Ontology
 # grep "^\[Term\]$" pyhpo/data/hp.obo | wc -l
-N_TERMS = 18697
+N_TERMS = 18961
 
 # Number of genes in the annotation dataset
 # cut -f4 pyhpo/data/phenotype_to_genes.txt | grep -v "^#" | grep -v "^gene_symbol" | sort -u | wc -l  # noqa: E501
 # cut -f1 example_data/2024-03-06/genes_to_phenotype.txt | grep -v "^ncbi_gene_id" | sort -u | wc -l
-N_GENES = 5026
+N_GENES = 5075
 
 # Number of OMIM diseases in the annotation dataset
 # cut -f1,3 pyhpo/data/phenotype.hpoa | grep "^OMIM" | sort -u | cut -f2 | grep -v "NOT" | wc -l  # noqa: E501
-N_OMIM = 8204
+N_OMIM = 8251
+
+# Number of ORPHA diseases in the annotation dataset
+# cut -f1,3 pyhpo/data/phenotype.hpoa | grep "^ORPHA" | sort -u | cut -f2 | grep -v "NOT" | wc -l  # noqa: E501
+N_ORPHA = 4244
 
 
 class IntegrationFullTest(unittest.TestCase):
@@ -24,8 +28,6 @@ class IntegrationFullTest(unittest.TestCase):
     def setUpClass(cls):
         Ontology()
         cls.terms = Ontology
-        cls.gene_model = EnrichmentModel('gene')
-        cls.omim_model = EnrichmentModel('omim')
 
     def test_terms_present(self):
         """
@@ -50,6 +52,13 @@ class IntegrationFullTest(unittest.TestCase):
             len(self.terms.omim_diseases),
             N_OMIM
         )
+
+    def test_orpha_associated(self):
+        """
+        These test will most likely need to be updated
+        after every data update
+        """
+        self.assertEqual(len(self.terms.orpha_diseases), N_ORPHA)
 
     def test_average_annotation_numbers(self):
         """
@@ -133,7 +142,8 @@ class IntegrationFullTest(unittest.TestCase):
 
     def test_gene_enrichment(self):
         hposet = HPOSet.from_queries('HP:0007401,HP:0010885'.split(','))
-        res = self.gene_model.enrichment('hypergeom', hposet)
+        gene_model = EnrichmentModel('gene')
+        res = gene_model.enrichment('hypergeom', hposet)
         self.assertIsInstance(res, list)
         self.assertIn('item', res[0])
         self.assertIn('count', res[0])
@@ -144,7 +154,8 @@ class IntegrationFullTest(unittest.TestCase):
 
     def test_omim_enrichment(self):
         hposet = HPOSet.from_queries('HP:0007401,HP:0010885'.split(','))
-        res = self.omim_model.enrichment('hypergeom', hposet)
+        omim_model = EnrichmentModel('omim')
+        res = omim_model.enrichment('hypergeom', hposet)
         self.assertIsInstance(res, list)
         self.assertIn('item', res[0])
         self.assertIn('count', res[0])
@@ -152,3 +163,15 @@ class IntegrationFullTest(unittest.TestCase):
         self.assertIsInstance(res[0]['item'], an.Omim)
         self.assertIsInstance(res[0]['count'], int)
         self.assertIsInstance(res[0]['enrichment'], float)
+
+    def test_orpha_enrichment(self):
+        hposet = HPOSet.from_queries("HP:0007401,HP:0010885".split(","))
+        orpha_model = EnrichmentModel('orpha')
+        res = orpha_model.enrichment("hypergeom", hposet)
+        self.assertIsInstance(res, list)
+        self.assertIn("item", res[0])
+        self.assertIn("count", res[0])
+        self.assertIn("enrichment", res[0])
+        self.assertIsInstance(res[0]["item"], an.Orpha)
+        self.assertIsInstance(res[0]["count"], int)
+        self.assertIsInstance(res[0]["enrichment"], float)

@@ -81,6 +81,7 @@ use crate::{get_ontology, information_content::PyInformationContentKind, set::Py
 /// .. code-block:: python
 ///
 ///     import pyhpo
+///     from pyhpo import Ontology, HPOSet
 ///     Ontology()
 ///
 ///     # Using 100 diseases and creating a Tuple of (Disease Name, HPOSet) for each

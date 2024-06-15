@@ -1,3 +1,4 @@
+use hpo::annotations::Disease;
 use std::collections::HashSet;
 use std::hash::Hash;
 
@@ -6,12 +7,10 @@ use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::types::PyDict;
 use pyo3::{prelude::*, types::PyType};
 
-use hpo::annotations::AnnotationId;
+use hpo::annotations::{AnnotationId, OrphaDiseaseId};
 use hpo::annotations::{GeneId, OmimDiseaseId};
 
 use crate::{get_ontology, set::PyHpoSet, PyQuery};
-
-pub trait PythonAnnotation {}
 
 #[pyclass(name = "Gene")]
 pub(crate) struct PyGene {
@@ -24,8 +23,6 @@ impl PyGene {
         Self { id, name }
     }
 }
-
-impl PythonAnnotation for PyGene {}
 
 #[pymethods]
 impl PyGene {
@@ -305,8 +302,6 @@ impl PyOmimDisease {
     }
 }
 
-impl PythonAnnotation for PyOmimDisease {}
-
 #[pymethods]
 impl PyOmimDisease {
     /// Returns the OmimDisease Id
@@ -341,7 +336,7 @@ impl PyOmimDisease {
     ///     from pyhpo import Ontology
     ///     Ontology()
     ///     disease = list(Ontology.omim_diseases)[0]
-    ///     gene.name  # ==> 'Spondyloepimetaphyseal dysplasia with hypotrichosis'
+    ///     disease.name  # ==> 'Spondyloepimetaphyseal dysplasia with hypotrichosis'
     ///
     #[getter(name)]
     pub fn name(&self) -> &str {
@@ -411,7 +406,7 @@ impl PyOmimDisease {
         PyHpoSet::try_from(self)
     }
 
-    /// Returns a gene that matches the provided query
+    /// Returns the Omim disease based on the Omim-ID
     ///
     /// Parameters
     /// ----------
@@ -547,6 +542,267 @@ impl Hash for PyOmimDisease {
 
 impl From<&hpo::annotations::OmimDisease> for PyOmimDisease {
     fn from(value: &hpo::annotations::OmimDisease) -> Self {
+        Self {
+            id: *value.id(),
+            name: value.name().into(),
+        }
+    }
+}
+
+#[pyclass(name = "Orpha")]
+pub(crate) struct PyOrphaDisease {
+    id: OrphaDiseaseId,
+    name: String,
+}
+
+impl PyOrphaDisease {
+    pub fn new(id: OrphaDiseaseId, name: String) -> Self {
+        Self { id, name }
+    }
+}
+
+#[pymethods]
+impl PyOrphaDisease {
+    /// Returns the OrphaDisease Id
+    ///
+    /// Returns
+    /// -------
+    /// int
+    ///     The Orpha-ID
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     disease = list(Ontology.orpha_diseases)[0]
+    ///     disease.id    # ==> 183849
+    ///
+    #[getter(id)]
+    pub fn id(&self) -> u32 {
+        self.id.as_u32()
+    }
+
+    /// Returns the name of the disease
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     disease = list(Ontology.orpha_diseases)[0]
+    ///     disease.name  # ==> 'Spondyloepimetaphyseal dysplasia with hypotrichosis'
+    ///
+    #[getter(name)]
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Returns the IDs of all associated ``HPOTerm``
+    ///
+    /// Returns
+    /// -------
+    /// set(int)
+    ///     A set of integers, representing the HPO-IDs
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     disease = list(Ontology.orpha_diseases)[0]
+    ///     disease.hpo
+    ///     # >> {100864, 5090, 4581, 6, 2663, 3911, 6599, ...}
+    ///
+    #[getter(hpo)]
+    pub fn hpo(&self) -> PyResult<HashSet<u32>> {
+        let ont = get_ontology()?;
+        Ok(ont
+            .orpha_disease(&self.id)
+            .unwrap()
+            .hpo_terms()
+            .iter()
+            .fold(HashSet::new(), |mut set, tid| {
+                set.insert(tid.as_u32());
+                set
+            }))
+    }
+
+    /// Returns a ``HPOSet`` of all associated ``HPOTerm``
+    ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.HPOSet`
+    ///     An ``HPOSet`` containing all associated ``HPOTerm``
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     disease = list(Ontology.orpha_diseases)[0]
+    ///     disease.hpo_set()
+    ///     # >> HPOSet.from_serialized(6+2651+2663+2812+2834+2869, ..._
+    ///
+    fn hpo_set(&self) -> PyResult<PyHpoSet> {
+        PyHpoSet::try_from(self)
+    }
+
+    /// Returns the Orpha disease based on the Orpha-ID
+    ///
+    /// Parameters
+    /// ----------
+    /// query: int
+    ///     An Orpha ID
+    ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.Orpha`
+    ///     A ``Orpha``
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    /// KeyError
+    ///     No disease found for the query
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology, Orpha
+    ///     Ontology()
+    ///     Orpha.get(183849)
+    ///     # >> <OrphaDisease (183849)>
+    ///
+    #[classmethod]
+    fn get(_cls: &PyType, id: u32) -> PyResult<PyOrphaDisease> {
+        let ont = get_ontology()?;
+        ont.orpha_disease(&id.into())
+            .ok_or(PyKeyError::new_err("'No disease found for query'"))
+            .map(|d| PyOrphaDisease::new(*d.id(), d.name().into()))
+    }
+
+    /// Returns a dict/JSON representation the Orpha disease
+    ///
+    /// Parameters
+    /// ----------
+    /// verbose: bool
+    ///     Indicates if all associated ``HPOTerm`` should be included in the output
+    ///
+    /// Returns
+    /// -------
+    /// Dict
+    ///     Dict representation of the Orpha disease
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology, Orpha
+    ///     Ontology()
+    ///     Orpha.get(183849).toJSON()
+    ///     # >> {'name': 'Spondyloepimetaphyseal dysplasia with hypotrichosis', 'id': 183849}
+    ///
+    #[pyo3(signature = (verbose = false))]
+    #[pyo3(text_signature = "($self, verbose)")]
+    #[allow(non_snake_case)]
+    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<&PyDict> {
+        let dict = PyDict::new(py);
+        dict.set_item("name", self.name())?;
+        dict.set_item("id", self.id())?;
+
+        if verbose {
+            let hpos: Vec<u32> = self.hpo()?.iter().copied().collect();
+            dict.set_item("hpo", hpos)?;
+        }
+
+        Ok(dict)
+    }
+
+    fn __str__(&self) -> String {
+        format!("{} | {}", self.id(), self.name())
+    }
+
+    fn __repr__(&self) -> String {
+        format!("<OrphaDisease ({})>", self.id())
+    }
+
+    fn __int__(&self) -> u32 {
+        self.id.as_u32()
+    }
+
+    fn __hash__(&self) -> u32 {
+        self.__int__()
+    }
+
+    /// Raises
+    /// ------
+    /// TypeError
+    ///     Invalid comparison. Only == and != is supported
+    ///
+    fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
+        match op {
+            CompareOp::Eq => Ok(self == other),
+            CompareOp::Ne => Ok(self != other),
+            CompareOp::Lt => Err(PyTypeError::new_err(
+                "\"<\" is not supported for Orpha instances",
+            )),
+            CompareOp::Le => Err(PyTypeError::new_err(
+                "\"<=\" is not supported for Orpha instances",
+            )),
+            CompareOp::Gt => Err(PyTypeError::new_err(
+                "\">\" is not supported for Orpha instances",
+            )),
+            CompareOp::Ge => Err(PyTypeError::new_err(
+                "\">=\" is not supported for Orpha instances",
+            )),
+        }
+    }
+}
+
+impl PartialEq for PyOrphaDisease {
+    fn eq(&self, other: &Self) -> bool {
+        self.id() == other.id()
+    }
+}
+impl Eq for PyOrphaDisease {}
+
+impl Hash for PyOrphaDisease {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        state.write_u32(self.id.as_u32())
+    }
+}
+
+impl From<&hpo::annotations::OrphaDisease> for PyOrphaDisease {
+    fn from(value: &hpo::annotations::OrphaDisease) -> Self {
         Self {
             id: *value.id(),
             name: value.name().into(),

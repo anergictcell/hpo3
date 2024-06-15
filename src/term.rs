@@ -352,7 +352,6 @@ impl PyHpoTerm {
             .collect()
     }
 
-
     /// Indicates if the term is flagged as obsolete
     ///
     /// Obsolete terms are ususally not linked to parents or children
@@ -377,8 +376,7 @@ impl PyHpoTerm {
     ///
     #[getter(is_obsolete)]
     fn is_obsolete(&self) -> bool {
-        self.hpo()
-            .is_obsolete()
+        self.hpo().is_obsolete()
     }
 
     /// Returns the replacement term name, if the term is obsolete
@@ -400,8 +398,7 @@ impl PyHpoTerm {
     ///
     #[getter(replaced_by)]
     fn replaced_by(&self) -> Option<String> {
-        self.hpo()
-            .replaced_by().map(|term| term.id().to_string())
+        self.hpo().replaced_by().map(|term| term.id().to_string())
     }
 
     /// Returns true if the term is a parent of ``other``
@@ -708,6 +705,7 @@ impl PyHpoTerm {
     ///     Available options:
     ///
     ///     * **omim**
+    ///     * **orpha**
     ///     * **gene**
     ///
     /// method: `str`, default `graphic`
@@ -783,6 +781,7 @@ impl PyHpoTerm {
     ///     Available options:
     ///
     ///     * **omim**
+    ///     * **orpha**
     ///     * **gene**
     ///
     /// method: str, default graphic
@@ -871,8 +870,7 @@ impl PyHpoTerm {
     ///     replacement.id # >> 'HP:0012720'
     ///
     fn replace(&self) -> Option<PyHpoTerm> {
-        self.hpo()
-            .replaced_by().map(PyHpoTerm::from)
+        self.hpo().replaced_by().map(PyHpoTerm::from)
     }
 
     /// Returns a dict/JSON representation the HPOTerm
@@ -949,7 +947,7 @@ impl PyHpoTerm {
             let ic = PyDict::new(py);
             ic.set_item("gene", term.information_content().gene())?;
             ic.set_item("omim", term.information_content().omim_disease())?;
-            ic.set_item("orpha", 0.0)?;
+            ic.set_item("orpha", term.information_content().orpha_disease())?;
             ic.set_item("decipher", 0.0)?;
             dict.set_item::<&str, Vec<&str>>("synonym", vec![])?;
             dict.set_item("comment", "")?;

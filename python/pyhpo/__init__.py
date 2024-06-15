@@ -1,6 +1,7 @@
 from pyhpo.pyhpo import Ontology
 from pyhpo.pyhpo import Gene
 from pyhpo.pyhpo import Omim
+from pyhpo.pyhpo import Orpha
 from pyhpo.pyhpo import HPOTerm
 from pyhpo.pyhpo import HPOSet
 from pyhpo.pyhpo import BasicHPOSet
@@ -17,6 +18,7 @@ __all__ = (
     "Ontology",
     "Gene",
     "Omim",
+    "Orpha",
     "HPOTerm",
     "HPOSet",
     "BasicHPOSet",
