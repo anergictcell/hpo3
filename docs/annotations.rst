@@ -5,6 +5,10 @@ Annotations
    :members:
    :inherited-members:
 
+.. autoclass:: pyhpo.Orpha
+   :members:
+   :inherited-members:
+
 .. autoclass:: pyhpo.Gene
    :members:
    :inherited-members:

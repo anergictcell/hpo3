@@ -16,7 +16,7 @@ Instantiation
 Instance methods
 ----------------
 .. autoclass:: pyhpo.HPOSet
-    :members:   add, child_nodes, remove_modifier, replace_obsolete, terms, all_genes, omim_diseases, information_content, similarity, similarity_scores, toJSON, serialize
+    :members:   add, child_nodes, remove_modifier, replace_obsolete, terms, all_genes, omim_diseases, orpha_diseases, information_content, similarity, similarity_scores, toJSON, serialize
 
 
 Not yet implemented

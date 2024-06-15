@@ -13,6 +13,7 @@ use hpo::annotations::AnnotationId;
 use hpo::similarity::Similarity;
 use hpo::term::HpoTermId;
 
+use crate::annotations::PyOrphaDisease;
 use crate::pyterm_from_id;
 use crate::term_from_id;
 use crate::ONTOLOGY;
@@ -279,11 +280,42 @@ impl PyHpoTerm {
     ///         print(disease.name)
     ///
     #[getter(omim_diseases)]
-    fn diseases(&self) -> HashSet<PyOmimDisease> {
+    fn omim_diseases(&self) -> HashSet<PyOmimDisease> {
         self.hpo()
             .omim_diseases()
             .fold(HashSet::new(), |mut set, disease| {
                 set.insert(PyOmimDisease::from(disease));
+                set
+            })
+    }
+
+    /// Returns a set of associated ORPHA diseases
+    ///
+    /// The list includes "inherited" diseases that are not directly
+    /// linked to the term, but to one of its children
+    ///
+    /// Returns
+    /// -------
+    /// Set[:class:`pyhpo.Orpha`]
+    ///     All associated Orpha diseases
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     term = Ontology.hpo(188)
+    ///     for disease in term.orpha_diseases:
+    ///         print(disease.name)
+    ///
+    #[getter(orpha_diseases)]
+    fn orpha_diseases(&self) -> HashSet<PyOrphaDisease> {
+        self.hpo()
+            .orpha_diseases()
+            .fold(HashSet::new(), |mut set, disease| {
+                set.insert(PyOrphaDisease::from(disease));
                 set
             })
     }

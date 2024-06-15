@@ -70,6 +70,7 @@ Attributes
 ----------
 .. autoattribute:: pyhpo.Ontology.__class__.genes
 .. autoattribute:: pyhpo.Ontology.__class__.omim_diseases
+.. autoattribute:: pyhpo.Ontology.__class__.orpha_diseases
 
 
 Methods

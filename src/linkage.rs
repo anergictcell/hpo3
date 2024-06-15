@@ -37,6 +37,7 @@ use crate::{get_ontology, information_content::PyInformationContentKind, set::Py
 ///     Available options:
 ///
 ///     * **omim**
+///     * **orpha**
 ///     * **gene**
 ///
 /// similarity_method: `str`, default `graphic`
