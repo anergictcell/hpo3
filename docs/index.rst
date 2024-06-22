@@ -2,32 +2,48 @@
 :math:`HPO_3`
 =============
 
-.. currentmodule:: pyhpo
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+    :caption: 🚀 Getting started:
+
+    getting_started
 
 .. toctree::
-   :maxdepth: 1
-   :hidden:
-   :caption: Key concepts:
+    :maxdepth: 1
+    :hidden:
+    :caption: 🖥️ Examples:
 
-   getting_started
-   ontology
-   hpoterm
-   hposet
-   annotations
-   stats
-   helper
-   pyhpo
-   api_changes
+    examples
+
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+    :caption: 📄 API documentation:
+
+    ontology
+    hpoterm
+    hposet
+    annotations
+    stats
+    helper
+
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+    :caption: 💡 Other infos:
+
+    pyhpo
+    api_changes
 
 
 Table of Contents
 =================
 
 * `HPO3`_
-* `Installation`_
-* `Examples`_
-* `Examples for multithreading`_
-* :doc:`pyhpo`
+* :doc:`🚀 Getting started <getting_started>`
+* :doc:`🖥️ Examples <examples>`
+* :doc:`📄 Further Info <pyhpo>`
 
 HPO3
 ====
@@ -63,8 +79,6 @@ Installation
 .. code-block:: bash
 
    pip install hpo3
-
-(For macOS, only Python 3.10 and 3.11 are supported, for both x64 and arm at the moment.)
 
 **hpo3** ships with a prebuilt HPO Ontology by default, so you can start right away.
 
@@ -164,7 +178,7 @@ Examples for multithreading
       (a[0], a[1]) for a in itertools.combinations(gene_sets, 2)
    ]
 
-   similarities = helper.set_batch_similarity(
+   similarities = helper.batch_set_similarity(
       gene_set_combinations[0:1000],  # only calculating for for 1000 comparisons to save time
       kind="omim",
       method="graphic",
@@ -193,7 +207,7 @@ Examples for multithreading
    genes = list(Ontology.genes)
    comparisons = [(patient_1, g.hpo_set()) for g in genes]
 
-   similarities = helper.set_batch_similarity(
+   similarities = helper.batch_set_similarity(
       comparisons,
       kind="omim",
       method="graphic",

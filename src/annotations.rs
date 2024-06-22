@@ -169,7 +169,7 @@ impl PyGene {
     ///     # >> <Gene (GBA1)>
     ///
     #[classmethod]
-    fn get(_cls: &PyType, query: PyQuery) -> PyResult<PyGene> {
+    fn get(_cls: &Bound<'_, PyType>, query: PyQuery) -> PyResult<PyGene> {
         let ont = get_ontology()?;
         match query {
             PyQuery::Str(symbol) => ont
@@ -213,8 +213,8 @@ impl PyGene {
     #[pyo3(signature = (verbose = false))]
     #[pyo3(text_signature = "($self, verbose)")]
     #[allow(non_snake_case)]
-    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<&PyDict> {
-        let dict = PyDict::new(py);
+    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Bound<'_, PyDict>> {
+        let dict = PyDict::new_bound(py);
         dict.set_item("name", self.name())?;
         dict.set_item("id", self.id())?;
         dict.set_item("symbol", self.name())?;
@@ -436,7 +436,7 @@ impl PyOmimDisease {
     ///     # >> <OmimDisease (183849)>
     ///
     #[classmethod]
-    fn get(_cls: &PyType, id: u32) -> PyResult<PyOmimDisease> {
+    fn get(_cls: &Bound<'_, PyType>, id: u32) -> PyResult<PyOmimDisease> {
         let ont = get_ontology()?;
         ont.omim_disease(&id.into())
             .ok_or(PyKeyError::new_err("'No disease found for query'"))
@@ -473,8 +473,8 @@ impl PyOmimDisease {
     #[pyo3(signature = (verbose = false))]
     #[pyo3(text_signature = "($self, verbose)")]
     #[allow(non_snake_case)]
-    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<&PyDict> {
-        let dict = PyDict::new(py);
+    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Bound<'_, PyDict>> {
+        let dict = PyDict::new_bound(py);
         dict.set_item("name", self.name())?;
         dict.set_item("id", self.id())?;
 
@@ -697,7 +697,7 @@ impl PyOrphaDisease {
     ///     # >> <OrphaDisease (183849)>
     ///
     #[classmethod]
-    fn get(_cls: &PyType, id: u32) -> PyResult<PyOrphaDisease> {
+    fn get(_cls: &Bound<'_, PyType>, id: u32) -> PyResult<PyOrphaDisease> {
         let ont = get_ontology()?;
         ont.orpha_disease(&id.into())
             .ok_or(PyKeyError::new_err("'No disease found for query'"))
@@ -734,8 +734,8 @@ impl PyOrphaDisease {
     #[pyo3(signature = (verbose = false))]
     #[pyo3(text_signature = "($self, verbose)")]
     #[allow(non_snake_case)]
-    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<&PyDict> {
-        let dict = PyDict::new(py);
+    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Bound<'_, PyDict>> {
+        let dict = PyDict::new_bound(py);
         dict.set_item("name", self.name())?;
         dict.set_item("id", self.id())?;
 

@@ -122,7 +122,7 @@ impl PyHpoSet {
     ///     from pyhpo import Ontology, HPOSet
     ///     Ontology()
     ///     my_set = HPOSet([])
-    ///     my_set.add(Ontology[118])
+    ///     my_set.add(Ontology.hpo(118))
     ///     len(my_set) # >> 1
     ///     my_set.add(2650)
     ///     len(my_set) # >> 2
@@ -256,10 +256,10 @@ impl PyHpoSet {
     ///     len(my_set) # >> 5
     ///     len(active_set) # >> 5
     ///
-    ///     Ontology[410003] in my_set
+    ///     Ontology.hpo(410003) in my_set
     ///     # >> True
     ///     
-    ///     Ontology[410003] in active_set
+    ///     Ontology.hpo(410003) in active_set
     ///     # >> False
     ///
     fn replace_obsolete(&self) -> PyResult<Self> {
@@ -388,7 +388,7 @@ impl PyHpoSet {
     /// ----------
     /// kind: str, default: ``omim``
     ///     Which kind of information content should be calculated.
-    ///     Options are ['omim', 'gene']
+    ///     Options are ['omim', 'orpha', 'gene']
     ///
     /// Returns
     /// -------
@@ -428,7 +428,11 @@ impl PyHpoSet {
     ///     # >> }
     ///
     #[pyo3(signature = (kind = "omim"))]
-    fn information_content<'a>(&'a self, py: Python<'a>, kind: &str) -> PyResult<&PyDict> {
+    fn information_content<'a>(
+        &'a self,
+        py: Python<'a>,
+        kind: &str,
+    ) -> PyResult<Bound<'_, PyDict>> {
         let kind = PyInformationContentKind::try_from(kind)?;
         let ont = get_ontology()?;
         let ics: Vec<f32> = self
@@ -444,7 +448,7 @@ impl PyHpoSet {
 
         let total: f32 = ics.iter().sum();
 
-        let dict = PyDict::new(py);
+        let dict = PyDict::new_bound(py);
         dict.set_item("mean", total / ics.len() as f32)?;
         dict.set_item("total", total)?;
         dict.set_item(
@@ -754,18 +758,18 @@ impl PyHpoSet {
     #[pyo3(signature = (verbose = false))]
     #[pyo3(text_signature = "($self, verbose)")]
     #[allow(non_snake_case)]
-    fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Vec<&PyDict>> {
+    fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Vec<Bound<'_, PyDict>>> {
         self.ids
             .iter()
             .map(|id| {
-                let dict = PyDict::new(py);
+                let dict = PyDict::new_bound(py);
                 let term = term_from_id(id.as_u32())?;
                 dict.set_item("name", term.name())?;
                 dict.set_item("id", term.id().to_string())?;
                 dict.set_item("int", term.id().as_u32())?;
 
                 if verbose {
-                    let ic = PyDict::new(py);
+                    let ic = PyDict::new_bound(py);
                     ic.set_item("gene", term.information_content().gene())?;
                     ic.set_item("omim", term.information_content().omim_disease())?;
                     ic.set_item("orpha", 0.0)?;
@@ -897,7 +901,7 @@ impl PyHpoSet {
     ///     # >> 3
     ///
     #[classmethod]
-    fn from_queries(_cls: &PyType, queries: Vec<PyQuery>) -> PyResult<Self> {
+    fn from_queries(_cls: &Bound<'_, PyType>, queries: Vec<PyQuery>) -> PyResult<Self> {
         let mut ids: Vec<HpoTermId> = Vec::with_capacity(queries.len());
         for q in queries {
             ids.push(term_from_query(q)?.id());
@@ -942,7 +946,7 @@ impl PyHpoSet {
     ///     # >> 10
     ///
     #[classmethod]
-    fn from_serialized(_cls: &PyType, pickle: &str) -> PyResult<Self> {
+    fn from_serialized(_cls: &Bound<'_, PyType>, pickle: &str) -> PyResult<Self> {
         let ids: HpoGroup = pickle
             .split('+')
             .map(|id| id.parse::<u32>())
@@ -990,14 +994,14 @@ impl PyHpoSet {
     ///     # >> 118
     ///
     #[classmethod]
-    pub fn from_gene(_cls: &PyType, gene: &PyGene) -> PyResult<Self> {
+    pub fn from_gene(_cls: &Bound<'_, PyType>, gene: &PyGene) -> PyResult<Self> {
         Self::try_from(gene)
     }
 
     /// Deprecated since 1.3.0
     /// Use :func:`pyhpo.HPOSet.from_omim_disease` instead
     #[classmethod]
-    pub fn from_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<Self> {
+    pub fn from_disease(_cls: &Bound<'_, PyType>, disease: &PyOmimDisease) -> PyResult<Self> {
         Self::try_from(disease)
     }
 
@@ -1030,7 +1034,7 @@ impl PyHpoSet {
     ///     # >> 18
     ///
     #[classmethod]
-    pub fn from_omim_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<Self> {
+    pub fn from_omim_disease(_cls: &Bound<'_, PyType>, disease: &PyOmimDisease) -> PyResult<Self> {
         Self::try_from(disease)
     }
 
@@ -1063,7 +1067,10 @@ impl PyHpoSet {
     ///     # >> 18
     ///
     #[classmethod]
-    pub fn from_orpha_disease(_cls: &PyType, disease: &PyOrphaDisease) -> PyResult<Self> {
+    pub fn from_orpha_disease(
+        _cls: &Bound<'_, PyType>,
+        disease: &PyOrphaDisease,
+    ) -> PyResult<Self> {
         Self::try_from(disease)
     }
 
@@ -1220,7 +1227,7 @@ impl BasicPyHpoSet {
     }
 
     #[classmethod]
-    fn from_queries(_cls: &PyType, queries: Vec<PyQuery>) -> PyResult<PyHpoSet> {
+    fn from_queries(_cls: &Bound<'_, PyType>, queries: Vec<PyQuery>) -> PyResult<PyHpoSet> {
         let mut ids: Vec<HpoTermId> = Vec::with_capacity(queries.len());
         for q in queries {
             ids.push(term_from_query(q)?.id());
@@ -1229,7 +1236,7 @@ impl BasicPyHpoSet {
     }
 
     #[classmethod]
-    fn from_serialized(_cls: &PyType, pickle: &str) -> PyResult<PyHpoSet> {
+    fn from_serialized(_cls: &Bound<'_, PyType>, pickle: &str) -> PyResult<PyHpoSet> {
         BasicPyHpoSet::build(
             pickle
                 .split('+')
@@ -1241,23 +1248,29 @@ impl BasicPyHpoSet {
     }
 
     #[classmethod]
-    pub fn from_gene(_cls: &PyType, gene: &PyGene) -> PyResult<PyHpoSet> {
+    pub fn from_gene(_cls: &Bound<'_, PyType>, gene: &PyGene) -> PyResult<PyHpoSet> {
         BasicPyHpoSet::build(gene.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 
     /// Deprecated since 1.3.0
     #[classmethod]
-    pub fn from_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<PyHpoSet> {
+    pub fn from_disease(_cls: &Bound<'_, PyType>, disease: &PyOmimDisease) -> PyResult<PyHpoSet> {
         BasicPyHpoSet::build(disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 
     #[classmethod]
-    pub fn from_omim_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<PyHpoSet> {
+    pub fn from_omim_disease(
+        _cls: &Bound<'_, PyType>,
+        disease: &PyOmimDisease,
+    ) -> PyResult<PyHpoSet> {
         BasicPyHpoSet::build(disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 
     #[classmethod]
-    pub fn from_orpha_disease(_cls: &PyType, disease: &PyOrphaDisease) -> PyResult<PyHpoSet> {
+    pub fn from_orpha_disease(
+        _cls: &Bound<'_, PyType>,
+        disease: &PyOrphaDisease,
+    ) -> PyResult<PyHpoSet> {
         BasicPyHpoSet::build(disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 }
@@ -1292,7 +1305,7 @@ impl PhenoSet {
     }
 
     #[classmethod]
-    fn from_queries(_cls: &PyType, queries: Vec<PyQuery>) -> PyResult<PyHpoSet> {
+    fn from_queries(_cls: &Bound<'_, PyType>, queries: Vec<PyQuery>) -> PyResult<PyHpoSet> {
         let mut ids: Vec<HpoTermId> = Vec::with_capacity(queries.len());
         for q in queries {
             ids.push(term_from_query(q)?.id());
@@ -1301,7 +1314,7 @@ impl PhenoSet {
     }
 
     #[classmethod]
-    fn from_serialized(_cls: &PyType, pickle: &str) -> PyResult<PyHpoSet> {
+    fn from_serialized(_cls: &Bound<'_, PyType>, pickle: &str) -> PyResult<PyHpoSet> {
         PhenoSet::build(
             pickle
                 .split('+')
@@ -1313,23 +1326,29 @@ impl PhenoSet {
     }
 
     #[classmethod]
-    pub fn from_gene(_cls: &PyType, gene: &PyGene) -> PyResult<PyHpoSet> {
+    pub fn from_gene(_cls: &Bound<'_, PyType>, gene: &PyGene) -> PyResult<PyHpoSet> {
         PhenoSet::build(gene.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 
     /// Deprecated since 1.3.0
     #[classmethod]
-    pub fn from_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<PyHpoSet> {
+    pub fn from_disease(_cls: &Bound<'_, PyType>, disease: &PyOmimDisease) -> PyResult<PyHpoSet> {
         PhenoSet::build(disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 
     #[classmethod]
-    pub fn from_omim_disease(_cls: &PyType, disease: &PyOmimDisease) -> PyResult<PyHpoSet> {
+    pub fn from_omim_disease(
+        _cls: &Bound<'_, PyType>,
+        disease: &PyOmimDisease,
+    ) -> PyResult<PyHpoSet> {
         PhenoSet::build(disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 
     #[classmethod]
-    pub fn from_orpha_disease(_cls: &PyType, disease: &PyOrphaDisease) -> PyResult<PyHpoSet> {
+    pub fn from_orpha_disease(
+        _cls: &Bound<'_, PyType>,
+        disease: &PyOrphaDisease,
+    ) -> PyResult<PyHpoSet> {
         PhenoSet::build(disease.hpo()?.iter().map(|id| HpoTermId::from_u32(*id)))
     }
 }

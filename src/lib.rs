@@ -148,7 +148,7 @@ pub enum TermOrId {
 /// This library aims to be a drop-in replacement for
 /// `pyhpo <https://pypi.org/project/pyhpo/>`_
 #[pymodule]
-fn pyhpo(_py: Python, m: &PyModule) -> PyResult<()> {
+fn pyhpo(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     let ont = PyOntology::blank();
     m.add_class::<PyGene>()?;
     m.add_class::<PyOmimDisease>()?;
@@ -157,6 +157,7 @@ fn pyhpo(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyHpoTerm>()?;
     m.add_class::<PyEnrichmentModel>()?;
     m.add_class::<PyInformationContent>()?;
+    m.add_class::<PyOntology>()?;
     m.add_function(wrap_pyfunction!(linkage::linkage, m)?)?;
     m.add("Ontology", ont)?;
     m.add("BasicHPOSet", set::BasicPyHpoSet)?;
@@ -402,7 +403,10 @@ fn batch_similarity(
 ///     # >>> The top enriched genes for Oculopharyngodistal myopathy 4 are: RILPL1, (1.4351489331895004e-49), LRP12, (2.168165858699749e-30), GIPC1, (3.180801819975307e-27), NOTCH2NLC, (1.0700847991253517e-23), VCP, (2.8742020666947536e-20)
 ///
 #[pyfunction]
-fn batch_gene_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<Vec<&PyDict>>> {
+fn batch_gene_enrichment(
+    py: Python,
+    hposets: Vec<PyHpoSet>,
+) -> PyResult<Vec<Vec<Bound<'_, PyDict>>>> {
     let ont = get_ontology()?;
     let enrichments = hposets
         .par_iter()
@@ -418,9 +422,9 @@ fn batch_gene_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<Vec
         .map(|set| {
             set.iter()
                 .map(|enrichment| crate::enrichment::gene_enrichment_dict(py, enrichment))
-                .collect::<PyResult<Vec<&PyDict>>>()
+                .collect::<PyResult<Vec<Bound<'_, PyDict>>>>()
         })
-        .collect::<PyResult<Vec<Vec<&PyDict>>>>()
+        .collect::<PyResult<Vec<Vec<Bound<'_, PyDict>>>>>()
 }
 
 /// Deprecated since 1.3.0
@@ -428,7 +432,10 @@ fn batch_gene_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<Vec
 /// Use :func:`pyhpo.helper.batch_omim_disease_enrichment` or
 /// :func:`pyhpo.helper.batch_orpha_disease_enrichment` instead
 #[pyfunction]
-fn batch_disease_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<Vec<&PyDict>>> {
+fn batch_disease_enrichment(
+    py: Python,
+    hposets: Vec<PyHpoSet>,
+) -> PyResult<Vec<Vec<Bound<'_, PyDict>>>> {
     batch_omim_disease_enrichment(py, hposets)
 }
 
@@ -486,7 +493,7 @@ fn batch_disease_enrichment(py: Python, hposets: Vec<PyHpoSet>) -> PyResult<Vec<
 fn batch_omim_disease_enrichment(
     py: Python,
     hposets: Vec<PyHpoSet>,
-) -> PyResult<Vec<Vec<&PyDict>>> {
+) -> PyResult<Vec<Vec<Bound<'_, PyDict>>>> {
     let ont = get_ontology()?;
     let enrichments = hposets
         .par_iter()
@@ -502,9 +509,9 @@ fn batch_omim_disease_enrichment(
         .map(|set| {
             set.iter()
                 .map(|enrichment| crate::enrichment::omim_disease_enrichment_dict(py, enrichment))
-                .collect::<PyResult<Vec<&PyDict>>>()
+                .collect::<PyResult<Vec<Bound<'_, PyDict>>>>()
         })
-        .collect::<PyResult<Vec<Vec<&PyDict>>>>()
+        .collect::<PyResult<Vec<Vec<Bound<'_, PyDict>>>>>()
 }
 
 /// Calculate enriched Orpha diseases in a list of ``HPOSet``
@@ -561,7 +568,7 @@ fn batch_omim_disease_enrichment(
 fn batch_orpha_disease_enrichment(
     py: Python,
     hposets: Vec<PyHpoSet>,
-) -> PyResult<Vec<Vec<&PyDict>>> {
+) -> PyResult<Vec<Vec<Bound<'_, PyDict>>>> {
     let ont = get_ontology()?;
     let enrichments = hposets
         .par_iter()
@@ -577,7 +584,7 @@ fn batch_orpha_disease_enrichment(
         .map(|set| {
             set.iter()
                 .map(|enrichment| crate::enrichment::orpha_disease_enrichment_dict(py, enrichment))
-                .collect::<PyResult<Vec<&PyDict>>>()
+                .collect::<PyResult<Vec<Bound<'_, PyDict>>>>()
         })
-        .collect::<PyResult<Vec<Vec<&PyDict>>>>()
+        .collect::<PyResult<Vec<Vec<Bound<'_, PyDict>>>>>()
 }

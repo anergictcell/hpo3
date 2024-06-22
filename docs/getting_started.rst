@@ -1,8 +1,5 @@
-Getting started
-===============
-
 Installation
-------------
+============
 hpo3 is provided as binary wheels for most platforms on PyPI, so in most cases you can just run
 
 .. code-block:: bash
@@ -13,7 +10,7 @@ hpo3 is provided as binary wheels for most platforms on PyPI, so in most cases y
 
 
 Initializing the Ontology
-~~~~~~~~~~~~~~~~~~~~~~~~~
+=========================
 
 hpo3 ships with a prebuilt HPO Ontology by default, so you can start right away.
 
@@ -27,14 +24,14 @@ hpo3 ships with a prebuilt HPO Ontology by default, so you can start right away.
         print(term.name)
 
     # get a single term based on their HPO ID
-    term = Ontology[118]
+    term = Ontology.hpo(118)
 
     # or by using the full Term ID
     term = Ontology.get_hpo_object("HP:0000118")
 
 
 Updating the Ontology
-~~~~~~~~~~~~~~~~~~~~~
+=====================
 
 While I try to keep the HPO ontology version updated, it might become outdated at some point. You can always check the used version:
 

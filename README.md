@@ -119,7 +119,7 @@ HP:0002751 | Kyphoscoliosis
 """
 
 # Show the categories a term belongs to
-for term in Ontology[10049].categories:
+for term in Ontology.hpo(10049).categories:
     print(term)
 """
 HP:0033127 | Abnormality of the musculoskeletal system

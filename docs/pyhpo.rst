@@ -22,7 +22,6 @@ Additional functionality:
 Missing or different functionality:
 -----------------------------------
 
-* Association of Orpha diseases to ``HPOTerm``\s
 * Association of Decipher diseases to ``HPOTerm``\s
 * custom ``InformationContent`` calculations
 * ``Ontology.search`` does not include synonyms

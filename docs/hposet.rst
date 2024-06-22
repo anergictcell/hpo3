@@ -11,6 +11,8 @@ Instantiation
 .. autofunction:: pyhpo.HPOSet.from_serialized
 .. autofunction:: pyhpo.HPOSet.from_gene
 .. autofunction:: pyhpo.HPOSet.from_disease
+.. autofunction:: pyhpo.HPOSet.from_omim_disease
+.. autofunction:: pyhpo.HPOSet.from_orpha_disease
 
 
 Instance methods

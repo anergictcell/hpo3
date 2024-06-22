@@ -17,7 +17,7 @@ use crate::{from_binary, from_obo, get_ontology, pyterm_from_id, term_from_query
 use crate::PyGene;
 use crate::PyHpoTerm;
 
-#[pyclass(name = "Ontology")]
+#[pyclass(name = "_Ontology")]
 pub struct PyOntology {}
 
 impl PyOntology {
@@ -112,7 +112,7 @@ impl PyOntology {
         Ok(res)
     }
 
-    /// Returns a single `HPOTerm` based on its name, synonym or id
+    /// Returns a single `HPOTerm` based on its name or id
     ///
     /// Parameters
     /// ----------
@@ -160,6 +160,11 @@ impl PyOntology {
     ///     Ontology.get_hpo_object('Multicystic kidney dysplasia')
     ///     # >> HP:0000003 | Multicystic kidney dysplasia
     ///
+    ///
+    /// .. note::
+    ///
+    ///    This method differs slightly from `pyhpo`, because
+    ///    it does not fall back to the synonym for searching
     ///
     #[pyo3(text_signature = "($self, query)")]
     fn get_hpo_object(&self, query: PyQuery) -> PyResult<PyHpoTerm> {
@@ -412,6 +417,13 @@ impl PyOntology {
     /// transitive: bool
     ///     Whether to associate HPOTerms transitively to genes.
     ///     You must provide the `phenotype_to_genes.txt` input file.
+
+    ///    # This requires the files:
+    /// # - Actual OBO data: hp.obo from https://hpo.jax.org/app/data/ontology
+    /// # - Links between HPO and OMIM diseases: phenotype.hpoa from https://hpo.jax.org/app/data/annotations
+    /// # - Links between HPO and Genes: [`genes_to_phenotype.txt`](http://purl.obolibrary.org/obo/hp/hpoa/genes_to_phenotype.txt)
+    /// #
+
     #[pyo3(signature = (data_folder = "", from_obo_file = true, transitive = false))]
     fn __call__(&self, data_folder: &str, from_obo_file: bool, transitive: bool) -> PyResult<()> {
         if get_ontology().is_ok() {

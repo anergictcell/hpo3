@@ -153,7 +153,7 @@ impl PyEnrichmentModel {
         py: Python<'a>,
         method: &str,
         hposet: &PyHpoSet,
-    ) -> PyResult<Vec<&'a PyDict>> {
+    ) -> PyResult<Vec<Bound<'a, PyDict>>> {
         let ont = get_ontology()?;
         let set = hposet.set(ont);
 
@@ -172,21 +172,21 @@ impl PyEnrichmentModel {
                 enr.sort_by(|a, b| a.pvalue().partial_cmp(&b.pvalue()).unwrap());
                 enr.iter()
                     .map(|enrichment| gene_enrichment_dict(py, enrichment))
-                    .collect::<PyResult<Vec<&PyDict>>>()
+                    .collect::<PyResult<Vec<Bound<'a, PyDict>>>>()
             }
             EnrichmentType::Omim => {
                 let mut enr = omim_disease_enrichment(ont, &set);
                 enr.sort_by(|a, b| a.pvalue().partial_cmp(&b.pvalue()).unwrap());
                 enr.iter()
                     .map(|enrichment| omim_disease_enrichment_dict(py, enrichment))
-                    .collect::<PyResult<Vec<&PyDict>>>()
+                    .collect::<PyResult<Vec<Bound<'a, PyDict>>>>()
             }
             EnrichmentType::Orpha => {
                 let mut enr = orpha_disease_enrichment(ont, &set);
                 enr.sort_by(|a, b| a.pvalue().partial_cmp(&b.pvalue()).unwrap());
                 enr.iter()
                     .map(|enrichment| orpha_disease_enrichment_dict(py, enrichment))
-                    .collect::<PyResult<Vec<&PyDict>>>()
+                    .collect::<PyResult<Vec<Bound<'a, PyDict>>>>()
             }
         };
         res
@@ -201,7 +201,7 @@ impl PyEnrichmentModel {
 pub(crate) fn omim_disease_enrichment_dict<'a, T>(
     py: Python<'a>,
     enrichment: &hpo::stats::Enrichment<T>,
-) -> PyResult<&'a PyDict>
+) -> PyResult<Bound<'a, PyDict>>
 where
     T: std::fmt::Display + hpo::annotations::AnnotationId,
 {
@@ -209,7 +209,7 @@ where
         .omim_disease(&OmimDiseaseId::from(enrichment.id().as_u32()))
         .map(|d| PyOmimDisease::new(*d.id(), d.name().into()))
         .unwrap();
-    let dict = PyDict::new(py);
+    let dict = PyDict::new_bound(py);
     dict.set_item("enrichment", enrichment.pvalue())?;
     dict.set_item("fold", enrichment.enrichment())?;
     dict.set_item("count", enrichment.count())?;
@@ -225,7 +225,7 @@ where
 pub(crate) fn orpha_disease_enrichment_dict<'a, T>(
     py: Python<'a>,
     enrichment: &hpo::stats::Enrichment<T>,
-) -> PyResult<&'a PyDict>
+) -> PyResult<Bound<'a, PyDict>>
 where
     T: std::fmt::Display + hpo::annotations::AnnotationId,
 {
@@ -233,7 +233,7 @@ where
         .orpha_disease(&OrphaDiseaseId::from(enrichment.id().as_u32()))
         .map(|d| PyOrphaDisease::new(*d.id(), d.name().into()))
         .unwrap();
-    let dict = PyDict::new(py);
+    let dict = PyDict::new_bound(py);
     dict.set_item("enrichment", enrichment.pvalue())?;
     dict.set_item("fold", enrichment.enrichment())?;
     dict.set_item("count", enrichment.count())?;
@@ -249,7 +249,7 @@ where
 pub(crate) fn gene_enrichment_dict<'a, T>(
     py: Python<'a>,
     enrichment: &hpo::stats::Enrichment<T>,
-) -> PyResult<&'a PyDict>
+) -> PyResult<Bound<'a, PyDict>>
 where
     T: std::fmt::Display + hpo::annotations::AnnotationId,
 {
@@ -257,7 +257,7 @@ where
         .gene(&GeneId::from(enrichment.id().as_u32()))
         .map(|g| PyGene::new(*g.id(), g.name().into()))
         .unwrap();
-    let dict = PyDict::new(py);
+    let dict = PyDict::new_bound(py);
     dict.set_item("enrichment", enrichment.pvalue())?;
     dict.set_item("fold", enrichment.enrichment())?;
     dict.set_item("count", enrichment.count())?;

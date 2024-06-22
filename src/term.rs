@@ -369,7 +369,7 @@ impl PyHpoTerm {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     term = Ontology[10049]
+    ///     term = Ontology.hpo(10049)
     ///     for parent in term._is_a:
     ///         print(parent)
     ///
@@ -403,7 +403,7 @@ impl PyHpoTerm {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     term = Ontology[10049]
+    ///     term = Ontology.hpo(10049)
     ///     term.is_obsolete # ==> False
     ///
     #[getter(is_obsolete)]
@@ -425,7 +425,7 @@ impl PyHpoTerm {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     term = Ontology[100637]
+    ///     term = Ontology.hpo(100637)
     ///     term.replaced_by # >> 'HP:0012720'
     ///
     #[getter(replaced_by)]
@@ -452,8 +452,8 @@ impl PyHpoTerm {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     term = Ontology[10049]
-    ///     term2 = Ontology[118]
+    ///     term = Ontology.hpo(10049)
+    ///     term2 = Ontology.hpo(118)
     ///
     ///     term2.parent_of(term)
     ///     # >> True
@@ -482,8 +482,8 @@ impl PyHpoTerm {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     term = Ontology[10049]
-    ///     term2 = Ontology[118]
+    ///     term = Ontology.hpo(10049)
+    ///     term2 = Ontology.hpo(118)
     ///
     ///     term.child_of(term2)
     ///     # >> True
@@ -508,7 +508,7 @@ impl PyHpoTerm {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     term = Ontology[10049]
+    ///     term = Ontology.hpo(10049)
     ///
     ///     term.parent_ids()
     ///     # >> [3026, 5914]
@@ -537,8 +537,8 @@ impl PyHpoTerm {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     term = Ontology[2650]
-    ///     term2 = Ontology[9121]
+    ///     term = Ontology.hpo(2650)
+    ///     term2 = Ontology.hpo(9121)
     ///
     ///     term.common_ancestors(term2)
     ///     # >> {<HpoTerm (HP:0000001)>, <HpoTerm (HP:0011842)>,
@@ -570,7 +570,7 @@ impl PyHpoTerm {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     Ontology[100490].count_parents()
+    ///     Ontology.hpo(100490).count_parents()
     ///     # >> 3
     ///
     #[pyo3(text_signature = "($self)")]
@@ -592,7 +592,7 @@ impl PyHpoTerm {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     Ontology[100490].shortest_path_to_root()
+    ///     Ontology.hpo(100490).shortest_path_to_root()
     ///     # >> 8
     ///
     #[pyo3(text_signature = "($self)")]
@@ -630,8 +630,8 @@ impl PyHpoTerm {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     term = Ontology[100490]
-    ///     term2 = Ontology[1]
+    ///     term = Ontology.hpo(100490)
+    ///     term2 = Ontology.hpo(1)
     ///     term.shortest_path_to_parent(term2)
     ///     # >> (
     ///     # >>    8.0,
@@ -665,8 +665,8 @@ impl PyHpoTerm {
     ///
     /// .. note::
     ///
-    ///     This method is not correctly implemented: It will always return
-    ///     ``0`` for the sub-paths distances.
+    ///     This method is only partially implemented: The returned path is correct,
+    ///     but it will always indicate ``0`` for the sub-paths distances.
     ///
     /// Parameters
     /// ----------
@@ -692,8 +692,8 @@ impl PyHpoTerm {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     term = Ontology[40064]
-    ///     term2 = Ontology[769]
+    ///     term = Ontology.hpo(40064)
+    ///     term2 = Ontology.hpo(769)
     ///     term.path_to_other(term2)
     ///     # >> (
     ///     # >>    2,
@@ -778,12 +778,12 @@ impl PyHpoTerm {
     ///     from pyhpo import Ontology
     ///
     ///     Ontology()
-    ///     term = Ontology[11968]
+    ///     term = Ontology.hpo(11968)
     ///
-    ///     term.similarity_score(Ontology[1743])
+    ///     term.similarity_score(Ontology.hpo(1743)
     ///
     ///     # compare HP:0011968 and HP:0001743 using Gene
-    ///     term.similarity_score(Ontology[1743], kind="gene")
+    ///     term.similarity_score(Ontology.hpo(1743), kind="gene")
     ///
     #[pyo3(signature = (other, kind = "omim", method = "graphic"))]
     #[pyo3(text_signature = "($self, other, kind, method)")]
@@ -854,7 +854,7 @@ impl PyHpoTerm {
     ///     from pyhpo import Ontology
     ///
     ///     Ontology()
-    ///     term = Ontology[11968]
+    ///     term = Ontology.hpo(11968)
     ///
     ///     term.similarity_scores(list(Ontology))
     ///
@@ -897,7 +897,7 @@ impl PyHpoTerm {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     term = Ontology[100637]
+    ///     term = Ontology.hpo(100637)
     ///     replacement = term.replace()
     ///     replacement.id # >> 'HP:0012720'
     ///
@@ -943,11 +943,11 @@ impl PyHpoTerm {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     term = Ontology[118]
+    ///     term = Ontology.hpo(118)
     ///     term.toJSON()
     ///     # >> {'name': 'Phenotypic abnormality', 'id': 'HP:0000118', 'int': 118}
     ///
-    ///     Ontology[265].toJSON(True)
+    ///     Ontology.hpo(265).toJSON(True)
     ///     # >> {
     ///     # >>     'name': 'Mastoiditis',
     ///     # >>     'id': 'HP:0000265',
@@ -968,15 +968,15 @@ impl PyHpoTerm {
     #[pyo3(signature = (verbose = false))]
     #[pyo3(text_signature = "($self, verbose)")]
     #[allow(non_snake_case)]
-    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<&PyDict> {
+    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Bound<'_, PyDict>> {
         let term = self.hpo();
-        let dict = PyDict::new(py);
+        let dict = PyDict::new_bound(py);
         dict.set_item("name", term.name())?;
         dict.set_item("id", term.id().to_string())?;
         dict.set_item("int", term.id().as_u32())?;
 
         if verbose {
-            let ic = PyDict::new(py);
+            let ic = PyDict::new_bound(py);
             ic.set_item("gene", term.information_content().gene())?;
             ic.set_item("omim", term.information_content().omim_disease())?;
             ic.set_item("orpha", term.information_content().orpha_disease())?;
