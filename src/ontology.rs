@@ -1,6 +1,7 @@
-use hpo::annotations::Disease;
+use std::collections::hash_map::Values;
 use std::collections::VecDeque;
 
+use hpo::annotations::GeneId;
 use hpo::HpoError;
 use pyo3::exceptions::PyFileNotFoundError;
 use pyo3::exceptions::PyRuntimeError;
@@ -47,13 +48,10 @@ impl PyOntology {
     /// NameError: Ontology not yet constructed
     #[getter(genes)]
     fn genes(&self) -> PyResult<Vec<PyGene>> {
-        let ont = get_ontology()?;
-
-        let mut res = Vec::new();
-        for gene in ont.genes() {
-            res.push(PyGene::new(*gene.id(), gene.name().into()))
-        }
-        Ok(res)
+        Ok(get_ontology()?
+            .genes()
+            .map(PyGene::from)
+            .collect())
     }
 
     /// A list of all Omim Diseases included in the ontology
@@ -75,13 +73,10 @@ impl PyOntology {
     /// NameError: Ontology not yet constructed
     #[getter(omim_diseases)]
     fn omim_diseases(&self) -> PyResult<Vec<PyOmimDisease>> {
-        let ont = get_ontology()?;
-
-        let mut res = Vec::new();
-        for disease in ont.omim_diseases() {
-            res.push(PyOmimDisease::new(*disease.id(), disease.name().into()))
-        }
-        Ok(res)
+        Ok(get_ontology()?
+            .omim_diseases()
+            .map(PyOmimDisease::from)
+            .collect())
     }
 
     /// A list of all Orpha Diseases included in the ontology
@@ -103,13 +98,10 @@ impl PyOntology {
     /// NameError: Ontology not yet constructed
     #[getter(orpha_diseases)]
     fn orpha_diseases(&self) -> PyResult<Vec<PyOrphaDisease>> {
-        let ont = get_ontology()?;
-
-        let mut res = Vec::new();
-        for disease in ont.orpha_diseases() {
-            res.push(PyOrphaDisease::new(*disease.id(), disease.name().into()))
-        }
-        Ok(res)
+        Ok(get_ontology()?
+            .orpha_diseases()
+            .map(PyOrphaDisease::from)
+            .collect())
     }
 
     /// Returns a single `HPOTerm` based on its name or id
@@ -203,14 +195,11 @@ impl PyOntology {
     ///
     #[pyo3(text_signature = "($self, query)")]
     fn r#match(&self, query: &str) -> PyResult<PyHpoTerm> {
-        let ont = get_ontology()?;
-        for term in ont {
-            if term.name() == query {
-                return Ok(PyHpoTerm::from(term));
-            }
-        }
-
-        Err(PyRuntimeError::new_err("No HPO entry found"))
+        get_ontology()?
+            .hpos()
+            .find(|term| term.name() == query)
+            .map(PyHpoTerm::from)
+            .ok_or_else(|| PyRuntimeError::new_err("No HPO entry found"))
     }
 
     /// Returns the shortest path from one to another HPO Term
@@ -326,15 +315,11 @@ impl PyOntology {
     ///
     #[pyo3(text_signature = "($self, query)")]
     fn search(&self, query: &str) -> PyResult<Vec<PyHpoTerm>> {
-        let mut res = Vec::new();
-        let ont = get_ontology()?;
-        for term in ont {
-            if term.name().contains(query) {
-                res.push(PyHpoTerm::from(term))
-            }
-        }
-
-        Ok(res)
+        Ok(get_ontology()?
+            .hpos()
+            .filter(|term| term.name().contains(query))
+            .map(PyHpoTerm::from)
+            .collect())
     }
 
     /// Returns the HpoTerm with the provided `id`

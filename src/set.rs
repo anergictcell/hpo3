@@ -1009,7 +1009,7 @@ impl PyHpoSet {
     ///
     /// Parameters
     /// ----------
-    /// gene: :class:`pyhpo.Omim`
+    /// disease: :class:`pyhpo.Omim`
     ///     An Omim disease from the ontology
     ///
     /// Returns
@@ -1042,7 +1042,7 @@ impl PyHpoSet {
     ///
     /// Parameters
     /// ----------
-    /// gene: :class:`pyhpo.Orpha`
+    /// disease: :class:`pyhpo.Orpha`
     ///     An Orpha disease from the ontology
     ///
     /// Returns
