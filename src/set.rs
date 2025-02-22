@@ -1,9 +1,10 @@
+use std::borrow::Cow;
 use std::collections::{HashSet, VecDeque};
 use std::num::ParseIntError;
 
 use rayon::prelude::*;
 
-use pyo3::exceptions::{PyAttributeError, PyRuntimeError};
+use pyo3::exceptions::{PyAttributeError, PyRuntimeError, PyValueError};
 use pyo3::types::PyDict;
 use pyo3::{prelude::*, types::PyType};
 
@@ -817,6 +818,30 @@ impl PyHpoSet {
         id_strings.join("+")
     }
 
+    /// Returns the HPOSet as a bytes object
+    ///
+    /// Returns
+    /// -------
+    /// bytes
+    ///     A bytes representation of the HPOSet
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     gene_sets = [g.hpo_set() for g in Ontology.genes]
+    ///     bytes = gene_sets[0].to_bytes()
+    ///     print(bytes)
+    ///     # >> b'\x00\x00/L'
+    ///
+    fn to_bytes(&self) -> Cow<[u8]> {
+        Cow::Owned(self.ids.iter().flat_map(|id| id.as_u32().to_be_bytes()).collect())
+    }
+
+
     /// Returns the HPOTerms in the set
     ///
     /// Returns
@@ -942,7 +967,7 @@ impl PyHpoSet {
     ///     from pyhpo import Ontology
     ///     Ontology()
     ///     my_set = HPOSet.from_serialized("7+118+152+234+271+315+478+479+492+496")
-    ///     len(my_set
+    ///     len(my_set)
     ///     # >> 10
     ///
     #[classmethod]
@@ -965,6 +990,72 @@ impl PyHpoSet {
         Ok(Self { ids })
     }
 
+    /// Instantiate an HPOSet from a bytes object
+    ///
+    /// This method assumes that the bytes object
+    /// was created from :func:`pyhpo.HPOSet.to_bytes`
+    ///
+    /// Parameters
+    /// ----------
+    /// bytes: bytes
+    ///     A bytes object of the HPOSet
+    /// skip_safety_check: bool
+    ///     if set to ``True``, this method will not ensure that only valid
+    ///     HPOTerms are added to the set. Only enable this if you are 100 %
+    ///     certain that your bytes data is correct. It could cause unexpected
+    ///     behaviour or crashes later on. **default: ``False``**
+    ///
+    /// Returns
+    /// -------
+    /// :class:`pyhpo.HPOSet`
+    ///     A new ``HPOSet``
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    /// ValueError
+    ///     The bytes object is not properly encoded
+    /// KeyError
+    ///     No HPO term is found for one of the contained HPOTerms
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///     Ontology()
+    ///     my_set = HPOSet.from_bytes(b"\x00\x00\x04\xef\x00\x00\x054\x00\x00\x05C\x00\x01\x86\xb5")
+    ///     len(my_set)
+    ///     # >> 4
+    ///
+    #[classmethod]
+    #[pyo3(signature = (bytes, skip_safety_check = false))]
+    #[pyo3(text_signature = "(bytes, skip_safety_check=False)")]
+    fn from_bytes(_cls: &Bound<'_, PyType>, bytes: Vec<u8>, skip_safety_check: bool) -> PyResult<Self> {
+        let iter = bytes.chunks_exact(4);
+        if !iter.remainder().is_empty() {
+            return Err(PyValueError::new_err("Invalid bytes"))
+        }
+
+        let term_exists_check = if skip_safety_check {
+            |_| Ok(())
+        } else {
+            |id| term_from_id(id).map(|_| ())
+        };
+
+        let ids: HpoGroup = iter
+            .map(|id_bytes| {
+                let id = u32::from_be_bytes(id_bytes.try_into().expect("id_bytes is exactly 4 bytes long"));
+                term_exists_check(id)?;
+                Ok(id)
+            })
+            .collect::<PyResult<Vec<u32>>>()?
+            .into();
+
+        Ok(Self { ids })
+    }
     /// Instantiate an HPOSet from a Gene
     ///
     /// Parameters
@@ -1168,6 +1259,25 @@ impl TryFrom<&PyOrphaDisease> for PyHpoSet {
             .into())
     }
 }
+
+impl TryFrom<&[u32]> for PyHpoSet {
+    type Error = PyErr;
+    /// Tries to create a `PyHpoSet` from a `PyOrphaDisease`
+    ///
+    /// NameError
+    ///     Ontology not yet constructed
+    /// KeyError
+    ///     HPOTerm does not exist
+    fn try_from(input: &[u32]) -> Result<Self, Self::Error> {
+        let mut ids = HpoGroup::new();
+        for id in input {
+            _ = term_from_id(*id)?;
+            ids.insert(*id);
+        }
+        Ok(Self { ids })
+    }
+}
+
 
 #[pyclass(name = "SetIterator")]
 struct Iter {
