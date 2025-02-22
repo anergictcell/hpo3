@@ -59,7 +59,7 @@ impl PyInformationContent {
     }
 }
 
-#[pyclass(name = "InformationContentKind")]
+#[pyclass(eq, name = "InformationContentKind")]
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum PyInformationContentKind {
     Omim,

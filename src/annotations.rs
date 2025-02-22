@@ -213,8 +213,8 @@ impl PyGene {
     #[pyo3(signature = (verbose = false))]
     #[pyo3(text_signature = "($self, verbose)")]
     #[allow(non_snake_case)]
-    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Bound<'_, PyDict>> {
-        let dict = PyDict::new_bound(py);
+    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Bound<'a, PyDict>> {
+        let dict = PyDict::new(py);
         dict.set_item("name", self.name())?;
         dict.set_item("id", self.id())?;
         dict.set_item("symbol", self.name())?;
@@ -473,8 +473,8 @@ impl PyOmimDisease {
     #[pyo3(signature = (verbose = false))]
     #[pyo3(text_signature = "($self, verbose)")]
     #[allow(non_snake_case)]
-    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Bound<'_, PyDict>> {
-        let dict = PyDict::new_bound(py);
+    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Bound<'a, PyDict>> {
+        let dict = PyDict::new(py);
         dict.set_item("name", self.name())?;
         dict.set_item("id", self.id())?;
 
@@ -734,8 +734,8 @@ impl PyOrphaDisease {
     #[pyo3(signature = (verbose = false))]
     #[pyo3(text_signature = "($self, verbose)")]
     #[allow(non_snake_case)]
-    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Bound<'_, PyDict>> {
-        let dict = PyDict::new_bound(py);
+    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Bound<'a, PyDict>> {
+        let dict = PyDict::new(py);
         dict.set_item("name", self.name())?;
         dict.set_item("id", self.id())?;
 

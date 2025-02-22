@@ -1,5 +1,5 @@
 use annotations::PyOrphaDisease;
-use once_cell::sync::OnceCell;
+use std::sync::OnceLock;
 
 use rayon::prelude::*;
 
@@ -28,7 +28,7 @@ use crate::ontology::PyOntology;
 use crate::set::PyHpoSet;
 use crate::term::PyHpoTerm;
 
-static ONTOLOGY: OnceCell<ActualOntology> = OnceCell::new();
+static ONTOLOGY: OnceLock<ActualOntology> = OnceLock::new();
 
 /// Builds the ontology from a binary HPO dump
 fn from_binary(path: &str) -> usize {
