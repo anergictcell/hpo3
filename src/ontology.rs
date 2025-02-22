@@ -1,7 +1,5 @@
-use std::collections::hash_map::Values;
 use std::collections::VecDeque;
 
-use hpo::annotations::GeneId;
 use hpo::HpoError;
 use pyo3::exceptions::PyFileNotFoundError;
 use pyo3::exceptions::PyRuntimeError;
@@ -13,6 +11,7 @@ use hpo::annotations::AnnotationId;
 use crate::annotations::PyOmimDisease;
 use crate::annotations::PyOrphaDisease;
 use crate::from_builtin;
+use crate::ONTOLOGY;
 use crate::{from_binary, from_obo, get_ontology, pyterm_from_id, term_from_query, PyQuery};
 
 use crate::PyGene;
