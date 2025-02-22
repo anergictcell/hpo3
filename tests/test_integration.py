@@ -7,20 +7,20 @@ from pyhpo import annotations as an
 
 # Number of terms in HPO Ontology
 # grep "^\[Term\]$" pyhpo/data/hp.obo | wc -l
-N_TERMS = 18961
+N_TERMS = 19484
 
 # Number of genes in the annotation dataset
 # cut -f4 pyhpo/data/phenotype_to_genes.txt | grep -v "^#" | grep -v "^gene_symbol" | sort -u | wc -l  # noqa: E501
 # cut -f1 example_data/2024-03-06/genes_to_phenotype.txt | grep -v "^ncbi_gene_id" | sort -u | wc -l
-N_GENES = 5075
+N_GENES = 5132
 
 # Number of OMIM diseases in the annotation dataset
 # cut -f1,3 pyhpo/data/phenotype.hpoa | grep "^OMIM" | sort -u | cut -f2 | grep -v "NOT" | wc -l  # noqa: E501
-N_OMIM = 8251
+N_OMIM = 8359
 
 # Number of ORPHA diseases in the annotation dataset
 # cut -f1,3 pyhpo/data/phenotype.hpoa | grep "^ORPHA" | sort -u | cut -f2 | grep -v "NOT" | wc -l  # noqa: E501
-N_ORPHA = 4244
+N_ORPHA = 4281
 
 
 class IntegrationFullTest(unittest.TestCase):
