@@ -209,11 +209,11 @@ where
         .omim_disease(&OmimDiseaseId::from(enrichment.id().as_u32()))
         .map(|d| PyOmimDisease::new(*d.id(), d.name().into()))
         .unwrap();
-    let dict = PyDict::new_bound(py);
+    let dict = PyDict::new(py);
     dict.set_item("enrichment", enrichment.pvalue())?;
     dict.set_item("fold", enrichment.enrichment())?;
     dict.set_item("count", enrichment.count())?;
-    dict.set_item("item", disease.into_py(py))?;
+    dict.set_item("item", disease.into_pyobject(py)?)?;
     Ok(dict)
 }
 
@@ -233,11 +233,11 @@ where
         .orpha_disease(&OrphaDiseaseId::from(enrichment.id().as_u32()))
         .map(|d| PyOrphaDisease::new(*d.id(), d.name().into()))
         .unwrap();
-    let dict = PyDict::new_bound(py);
+    let dict = PyDict::new(py);
     dict.set_item("enrichment", enrichment.pvalue())?;
     dict.set_item("fold", enrichment.enrichment())?;
     dict.set_item("count", enrichment.count())?;
-    dict.set_item("item", disease.into_py(py))?;
+    dict.set_item("item", disease.into_pyobject(py)?)?;
     Ok(dict)
 }
 
@@ -257,10 +257,10 @@ where
         .gene(&GeneId::from(enrichment.id().as_u32()))
         .map(|g| PyGene::new(*g.id(), g.name().into()))
         .unwrap();
-    let dict = PyDict::new_bound(py);
+    let dict = PyDict::new(py);
     dict.set_item("enrichment", enrichment.pvalue())?;
     dict.set_item("fold", enrichment.enrichment())?;
     dict.set_item("count", enrichment.count())?;
-    dict.set_item("item", gene.into_py(py))?;
+    dict.set_item("item", gene.into_pyobject(py)?)?;
     Ok(dict)
 }

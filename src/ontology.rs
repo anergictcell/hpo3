@@ -11,7 +11,6 @@ use hpo::annotations::AnnotationId;
 use crate::annotations::PyOmimDisease;
 use crate::annotations::PyOrphaDisease;
 use crate::from_builtin;
-use crate::ONTOLOGY;
 use crate::{from_binary, from_obo, get_ontology, pyterm_from_id, term_from_query, PyQuery};
 
 use crate::PyGene;
@@ -401,13 +400,12 @@ impl PyOntology {
     /// transitive: bool
     ///     Whether to associate HPOTerms transitively to genes.
     ///     You must provide the `phenotype_to_genes.txt` input file.
-
-    ///    # This requires the files:
-    /// # - Actual OBO data: hp.obo from https://hpo.jax.org/app/data/ontology
-    /// # - Links between HPO and OMIM diseases: phenotype.hpoa from https://hpo.jax.org/app/data/annotations
-    /// # - Links between HPO and Genes: [`genes_to_phenotype.txt`](http://purl.obolibrary.org/obo/hp/hpoa/genes_to_phenotype.txt)
-    /// #
-
+    ///
+    /// This requires the files:
+    /// - Actual OBO data: hp.obo from https://hpo.jax.org/app/data/ontology
+    /// - Links between HPO and OMIM diseases: phenotype.hpoa from https://hpo.jax.org/app/data/annotations
+    /// - Links between HPO and Genes: [`genes_to_phenotype.txt`](http://purl.obolibrary.org/obo/hp/hpoa/genes_to_phenotype.txt)
+    ///
     #[pyo3(signature = (data_folder = "", from_obo_file = true, transitive = false))]
     fn __call__(&self, data_folder: &str, from_obo_file: bool, transitive: bool) -> PyResult<()> {
         if get_ontology().is_ok() {

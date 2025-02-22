@@ -968,15 +968,15 @@ impl PyHpoTerm {
     #[pyo3(signature = (verbose = false))]
     #[pyo3(text_signature = "($self, verbose)")]
     #[allow(non_snake_case)]
-    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Bound<'_, PyDict>> {
+    pub fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Bound<'a, PyDict>> {
         let term = self.hpo();
-        let dict = PyDict::new_bound(py);
+        let dict = PyDict::new(py);
         dict.set_item("name", term.name())?;
         dict.set_item("id", term.id().to_string())?;
         dict.set_item("int", term.id().as_u32())?;
 
         if verbose {
-            let ic = PyDict::new_bound(py);
+            let ic = PyDict::new(py);
             ic.set_item("gene", term.information_content().gene())?;
             ic.set_item("omim", term.information_content().omim_disease())?;
             ic.set_item("orpha", term.information_content().orpha_disease())?;

@@ -433,7 +433,7 @@ impl PyHpoSet {
         &'a self,
         py: Python<'a>,
         kind: &str,
-    ) -> PyResult<Bound<'_, PyDict>> {
+    ) -> PyResult<Bound<'a, PyDict>> {
         let kind = PyInformationContentKind::try_from(kind)?;
         let ont = get_ontology()?;
         let ics: Vec<f32> = self
@@ -449,7 +449,7 @@ impl PyHpoSet {
 
         let total: f32 = ics.iter().sum();
 
-        let dict = PyDict::new_bound(py);
+        let dict = PyDict::new(py);
         dict.set_item("mean", total / ics.len() as f32)?;
         dict.set_item("total", total)?;
         dict.set_item(
@@ -759,18 +759,18 @@ impl PyHpoSet {
     #[pyo3(signature = (verbose = false))]
     #[pyo3(text_signature = "($self, verbose)")]
     #[allow(non_snake_case)]
-    fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Vec<Bound<'_, PyDict>>> {
+    fn toJSON<'a>(&'a self, py: Python<'a>, verbose: bool) -> PyResult<Vec<Bound<'a, PyDict>>> {
         self.ids
             .iter()
             .map(|id| {
-                let dict = PyDict::new_bound(py);
+                let dict = PyDict::new(py);
                 let term = term_from_id(id.as_u32())?;
                 dict.set_item("name", term.name())?;
                 dict.set_item("id", term.id().to_string())?;
                 dict.set_item("int", term.id().as_u32())?;
 
                 if verbose {
-                    let ic = PyDict::new_bound(py);
+                    let ic = PyDict::new(py);
                     ic.set_item("gene", term.information_content().gene())?;
                     ic.set_item("omim", term.information_content().omim_disease())?;
                     ic.set_item("orpha", 0.0)?;
@@ -1207,7 +1207,7 @@ impl PyHpoSet {
 }
 
 impl<'a> PyHpoSet {
-    pub fn set(&'a self, ont: &'a Ontology) -> HpoSet {
+    pub fn set(&'a self, ont: &'a Ontology) -> HpoSet<'a> {
         HpoSet::new(ont, self.ids.clone())
     }
 }
