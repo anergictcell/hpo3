@@ -520,6 +520,11 @@ impl PyHpoTerm {
 
     /// Returns common ancestor ``HPOTerm``
     ///
+    /// .. note::
+    ///
+    ///     If the two terms have a parent - child relation, the parent
+    ///     term will be included in the output as a ``common ancestor``.
+    ///
     /// Parameters
     /// ----------
     /// other: :class:`HPOTerm`
@@ -548,7 +553,7 @@ impl PyHpoTerm {
     #[pyo3(text_signature = "($self, other)")]
     fn common_ancestors(&self, other: &PyHpoTerm) -> HashSet<PyHpoTerm> {
         self.hpo()
-            .common_ancestors(&other.hpo())
+            .all_common_ancestors(&other.hpo())
             .iter()
             .fold(HashSet::new(), |mut set, term| {
                 set.insert(PyHpoTerm::from(term));
