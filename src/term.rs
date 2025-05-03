@@ -552,13 +552,13 @@ impl PyHpoTerm {
     ///
     #[pyo3(text_signature = "($self, other)")]
     fn common_ancestors(&self, other: &PyHpoTerm) -> HashSet<PyHpoTerm> {
-        self.hpo()
-            .all_common_ancestors(&other.hpo())
-            .iter()
-            .fold(HashSet::new(), |mut set, term| {
+        self.hpo().all_common_ancestors(&other.hpo()).iter().fold(
+            HashSet::new(),
+            |mut set, term| {
                 set.insert(PyHpoTerm::from(term));
                 set
-            })
+            },
+        )
     }
 
     /// Returns the number of direct parents of the term

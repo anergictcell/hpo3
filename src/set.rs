@@ -838,9 +838,13 @@ impl PyHpoSet {
     ///     # >> b'\x00\x00/L'
     ///
     fn to_bytes(&self) -> Cow<[u8]> {
-        Cow::Owned(self.ids.iter().flat_map(|id| id.as_u32().to_be_bytes()).collect())
+        Cow::Owned(
+            self.ids
+                .iter()
+                .flat_map(|id| id.as_u32().to_be_bytes())
+                .collect(),
+        )
     }
-
 
     /// Returns the HPOTerms in the set
     ///
@@ -1033,10 +1037,14 @@ impl PyHpoSet {
     #[classmethod]
     #[pyo3(signature = (bytes, safety_check = true))]
     #[pyo3(text_signature = "(bytes, safety_check=True)")]
-    pub fn from_bytes(_cls: &Bound<'_, PyType>, bytes: Vec<u8>, safety_check: bool) -> PyResult<Self> {
+    pub fn from_bytes(
+        _cls: &Bound<'_, PyType>,
+        bytes: Vec<u8>,
+        safety_check: bool,
+    ) -> PyResult<Self> {
         let iter = bytes.chunks_exact(4);
         if !iter.remainder().is_empty() {
-            return Err(PyValueError::new_err("Invalid bytes"))
+            return Err(PyValueError::new_err("Invalid bytes"));
         }
 
         let term_exists_check = if safety_check {
@@ -1047,7 +1055,11 @@ impl PyHpoSet {
 
         let ids: HpoGroup = iter
             .map(|id_bytes| {
-                let id = u32::from_be_bytes(id_bytes.try_into().expect("id_bytes is exactly 4 bytes long"));
+                let id = u32::from_be_bytes(
+                    id_bytes
+                        .try_into()
+                        .expect("id_bytes is exactly 4 bytes long"),
+                );
                 term_exists_check(id)?;
                 Ok(id)
             })
@@ -1277,7 +1289,6 @@ impl TryFrom<&[u32]> for PyHpoSet {
         Ok(Self { ids })
     }
 }
-
 
 #[pyclass(name = "SetIterator")]
 struct Iter {
