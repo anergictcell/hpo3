@@ -46,10 +46,7 @@ impl PyOntology {
     /// NameError: Ontology not yet constructed
     #[getter(genes)]
     fn genes(&self) -> PyResult<Vec<PyGene>> {
-        Ok(get_ontology()?
-            .genes()
-            .map(PyGene::from)
-            .collect())
+        Ok(get_ontology()?.genes().map(PyGene::from).collect())
     }
 
     /// A list of all Omim Diseases included in the ontology
