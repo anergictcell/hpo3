@@ -128,7 +128,7 @@ impl PyGene {
     ///
     ///     from pyhpo import Ontology
     ///     Ontology()
-    ///     gene = list(Ontology.genes[0]
+    ///     gene = list(Ontology.genes)[0]
     ///     gene.hpo_set()
     ///     # >> HPOSet.from_serialized(7+118+152+234+271+315, ....)
     ///

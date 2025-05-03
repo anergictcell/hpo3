@@ -10,7 +10,7 @@ The :class:`pyhpo.Ontology` is the main component of **hpo3**, it contains refer
 
 Instantiation
 -------------
-The `Ontology` must be instantiated once in every running program. This loads all HPO terms, their connections and annotation into memory.
+The ``Ontology`` must be instantiated once in every running program. This loads all HPO terms, their connections and annotation into memory.
 
 Omitting all arguments will automatically load the built-in version. Alternatively, you can specify a binary data file or a folder that contains the JAX standard HPO data files.
 
@@ -25,8 +25,8 @@ Ontology()
         Set to ``False`` to load a binary data source.
     :transitive: *(bool)*
         Load the ontology transitive, i.e. use the `phenotype_to_genes.txt` source instead to link
-        terms to genes. This means that HPO-terms are transitively added to each gene.
-        (default ``False``)
+        terms to genes. This means that if an HPO-term is linked to a gene, all it's parent term
+        will be linked automatically as well. (default ``False``)
 :Returns:
     ``None`` (calling ``Ontology`` instatiates the global ``Ontology`` singleton)
 

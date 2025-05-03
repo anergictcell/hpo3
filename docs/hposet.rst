@@ -9,6 +9,7 @@ Instantiation
 
 .. autofunction:: pyhpo.HPOSet.from_queries
 .. autofunction:: pyhpo.HPOSet.from_serialized
+.. autofunction:: pyhpo.HPOSet.from_bytes
 .. autofunction:: pyhpo.HPOSet.from_gene
 .. autofunction:: pyhpo.HPOSet.from_disease
 .. autofunction:: pyhpo.HPOSet.from_omim_disease
@@ -18,7 +19,7 @@ Instantiation
 Instance methods
 ----------------
 .. autoclass:: pyhpo.HPOSet
-    :members:   add, child_nodes, remove_modifier, replace_obsolete, terms, all_genes, omim_diseases, orpha_diseases, information_content, similarity, similarity_scores, toJSON, serialize
+    :members:   add, child_nodes, remove_modifier, replace_obsolete, terms, all_genes, omim_diseases, orpha_diseases, information_content, similarity, similarity_scores, toJSON, serialize, to_bytes
 
 
 Not yet implemented
