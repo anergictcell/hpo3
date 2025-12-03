@@ -51,7 +51,7 @@ impl PyInformationContent {
 
     fn __repr__(&self) -> String {
         format!(
-            "<InformationContent (Omim: {:.4}, Oprha: {:.4}, Gene: {:.4})>",
+            "<InformationContent (Omim: {:.4}, Orpha: {:.4}, Gene: {:.4})>",
             self.omim(),
             self.orpha(),
             self.gene(),
