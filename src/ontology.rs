@@ -389,9 +389,14 @@ impl PyOntology {
     /// This method can be used once to set custom information scores
     /// once for the whole Ontology. It can not be used multiple times.
     ///
+    /// .. important::
+    ///
+    ///     This method might not be thread safe. If you use multi-threading, please ensure that
+    ///     no background tasks are running before setting custom information content scores.
+    ///
     /// Parameters
     /// ----------
-    /// scores: list[tuples]
+    /// scores: list[(int, float)]
     ///     A list of tuples containing the HPOTermId and the score
     ///
     /// Returns
@@ -410,10 +415,28 @@ impl PyOntology {
     ///     custom scores were already assigned previously. Assigning custom
     ///     scores is only possible once and can't be done multiple times.
     ///
-    /// .. warning::
+    /// Examples
+    /// --------
     ///
-    ///     This method might not be thread safe. If you use multi-threading, please ensure that
-    ///     no background tasks are running before setting custom information content scores.
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///
+    ///     Ontology()
+    ///
+    ///     # Assign random information scores based on the term name length...
+    ///     # For demonstration purposes, we do this more verbose than needed
+    ///     scores = []
+    ///     for term in Ontology:
+    ///         term_id = int(term)
+    ///         custom_ic_score = len(term.name) / 100
+    ///         score = (term_id, custom_ic_score)
+    ///         scores.append(score)
+    ///
+    ///     Ontology.set_custom_information_content(scores)
+    ///
+    ///     print(Ontology.hpo(118).information_content.custom)
+    ///     # >> "0.2199999988079071"
     ///
     #[pyo3(text_signature = "($self, scores)")]
     fn set_custom_information_content(&self, scores: Vec<(u32, f32)>) -> PyResult<()> {
