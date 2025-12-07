@@ -3,7 +3,7 @@ use std::sync::OnceLock;
 
 use rayon::prelude::*;
 
-use pyo3::exceptions::{PyKeyError, PyRuntimeError, PyValueError};
+use pyo3::exceptions::{PyKeyError, PyNameError, PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
@@ -28,19 +28,57 @@ use crate::ontology::PyOntology;
 use crate::set::PyHpoSet;
 use crate::term::PyHpoTerm;
 
-static ONTOLOGY: OnceLock<ActualOntology> = OnceLock::new();
+struct StaticOntology {
+    original: OnceLock<ActualOntology>,
+    modified: OnceLock<ActualOntology>,
+}
+
+impl StaticOntology {
+    const fn new() -> StaticOntology {
+        StaticOntology {
+            original: OnceLock::new(),
+            modified: OnceLock::new(),
+        }
+    }
+
+    pub fn get(&'static self) -> Option<&'static ActualOntology> {
+        self.modified.get().or_else(|| self.original.get())
+    }
+
+    // NOTE: If you ever call this function, ensure that Ontology
+    // has not been built before. This method will crash otherwise!
+    pub fn unsafe_set(&'static self, value: ActualOntology) {
+        self.original.set(value).unwrap()
+    }
+
+    pub fn set_custom_ic(&'static self, scores: &[(u32, f32)]) -> PyResult<()> {
+        let mut ont = self
+            .original
+            .get()
+            .ok_or(PyNameError::new_err("Ontology is not yet initialized"))?
+            .clone();
+        ont.custom_information_content(scores)
+            .map_err(|_| PyKeyError::new_err("Invalid HPO term provided"))?;
+        self.modified
+            .set(ont)
+            .map_err(|_| PyRuntimeError::new_err("Custom scores could not be set"))?;
+        Ok(())
+    }
+}
+
+static ONTOLOGY: StaticOntology = StaticOntology::new();
 
 /// Builds the ontology from a binary HPO dump
 fn from_binary(path: &str) -> usize {
     let ont = ActualOntology::from_binary(path).unwrap();
-    ONTOLOGY.set(ont).unwrap();
+    ONTOLOGY.unsafe_set(ont);
     ONTOLOGY.get().unwrap().len()
 }
 
 fn from_builtin() -> usize {
     let bytes = include_bytes!("../data/ontology.hpo");
     let ont = ActualOntology::from_bytes(&bytes[..]).expect("Unable to build Ontology");
-    ONTOLOGY.set(ont).unwrap();
+    ONTOLOGY.unsafe_set(ont);
     ONTOLOGY.get().unwrap().len()
 }
 
@@ -51,7 +89,7 @@ fn from_obo(path: &str, transitive: bool) -> HpoResult<usize> {
     } else {
         ActualOntology::from_standard(path)?
     };
-    ONTOLOGY.set(ont).unwrap();
+    ONTOLOGY.unsafe_set(ont);
     Ok(ONTOLOGY.get().unwrap().len())
 }
 
@@ -129,6 +167,10 @@ fn term_from_query(query: PyQuery) -> PyResult<HpoTerm<'static>> {
         }
     };
     Err(PyRuntimeError::new_err("Unknown HPO term"))
+}
+
+pub fn set_custom_ic(scores: &[(u32, f32)]) -> PyResult<()> {
+    ONTOLOGY.set_custom_ic(scores)
 }
 
 #[derive(FromPyObject)]
@@ -404,7 +446,7 @@ fn batch_similarity(
 ///
 #[pyfunction]
 fn batch_gene_enrichment(
-    py: Python,
+    py: Python<'_>,
     hposets: Vec<PyHpoSet>,
 ) -> PyResult<Vec<Vec<Bound<'_, PyDict>>>> {
     let ont = get_ontology()?;
@@ -433,7 +475,7 @@ fn batch_gene_enrichment(
 /// :func:`pyhpo.helper.batch_orpha_disease_enrichment` instead
 #[pyfunction]
 fn batch_disease_enrichment(
-    py: Python,
+    py: Python<'_>,
     hposets: Vec<PyHpoSet>,
 ) -> PyResult<Vec<Vec<Bound<'_, PyDict>>>> {
     batch_omim_disease_enrichment(py, hposets)
@@ -491,7 +533,7 @@ fn batch_disease_enrichment(
 ///
 #[pyfunction]
 fn batch_omim_disease_enrichment(
-    py: Python,
+    py: Python<'_>,
     hposets: Vec<PyHpoSet>,
 ) -> PyResult<Vec<Vec<Bound<'_, PyDict>>>> {
     let ont = get_ontology()?;
@@ -566,7 +608,7 @@ fn batch_omim_disease_enrichment(
 ///
 #[pyfunction]
 fn batch_orpha_disease_enrichment(
-    py: Python,
+    py: Python<'_>,
     hposets: Vec<PyHpoSet>,
 ) -> PyResult<Vec<Vec<Bound<'_, PyDict>>>> {
     let ont = get_ontology()?;

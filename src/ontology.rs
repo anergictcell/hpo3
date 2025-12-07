@@ -11,6 +11,7 @@ use hpo::annotations::AnnotationId;
 use crate::annotations::PyOmimDisease;
 use crate::annotations::PyOrphaDisease;
 use crate::from_builtin;
+use crate::set_custom_ic;
 use crate::{from_binary, from_obo, get_ontology, pyterm_from_id, term_from_query, PyQuery};
 
 use crate::PyGene;
@@ -46,10 +47,7 @@ impl PyOntology {
     /// NameError: Ontology not yet constructed
     #[getter(genes)]
     fn genes(&self) -> PyResult<Vec<PyGene>> {
-        Ok(get_ontology()?
-            .genes()
-            .map(PyGene::from)
-            .collect())
+        Ok(get_ontology()?.genes().map(PyGene::from).collect())
     }
 
     /// A list of all Omim Diseases included in the ontology
@@ -386,6 +384,65 @@ impl PyOntology {
         Ok(get_ontology()?.hpo_version())
     }
 
+    /// Adds custom Information content scores to the Ontology
+    ///
+    /// This method can be used once to set custom information scores
+    /// once for the whole Ontology. It can not be used multiple times.
+    ///
+    /// .. important::
+    ///
+    ///     This method might not be thread safe. If you use multi-threading, please ensure that
+    ///     no background tasks are running before setting custom information content scores.
+    ///
+    /// Parameters
+    /// ----------
+    /// scores: list[(int, float)]
+    ///     A list of tuples containing the HPOTermId and the score
+    ///
+    /// Returns
+    /// -------
+    /// None
+    ///     Replaces the Ontology with a new one
+    ///
+    /// Raises
+    /// ------
+    /// NameError
+    ///     Ontology not yet constructed
+    /// KeyError
+    ///     No HPO term is found for the provided query
+    /// RuntimeError
+    ///     The custom scores could not be added. This could be the case if
+    ///     custom scores were already assigned previously. Assigning custom
+    ///     scores is only possible once and can't be done multiple times.
+    ///
+    /// Examples
+    /// --------
+    ///
+    /// .. code-block:: python
+    ///
+    ///     from pyhpo import Ontology
+    ///
+    ///     Ontology()
+    ///
+    ///     # Assign random information scores based on the term name length...
+    ///     # For demonstration purposes, we do this more verbose than needed
+    ///     scores = []
+    ///     for term in Ontology:
+    ///         term_id = int(term)
+    ///         custom_ic_score = len(term.name) / 100
+    ///         score = (term_id, custom_ic_score)
+    ///         scores.append(score)
+    ///
+    ///     Ontology.set_custom_information_content(scores)
+    ///
+    ///     print(Ontology.hpo(118).information_content.custom)
+    ///     # >> "0.2199999988079071"
+    ///
+    #[pyo3(text_signature = "($self, scores)")]
+    fn set_custom_information_content(&self, scores: Vec<(u32, f32)>) -> PyResult<()> {
+        set_custom_ic(&scores)
+    }
+
     /// Constructs the ontology based on provided ontology files
     ///
     /// The ontology files can be in the standard format as provided
@@ -417,26 +474,24 @@ impl PyOntology {
             Ok(())
         } else if from_obo_file {
             match from_obo(data_folder, transitive) {
-                Ok(_) => return Ok(()),
+                Ok(_) => Ok(()),
                 Err(HpoError::CannotOpenFile(filename)) => {
                     if filename.ends_with("genes_to_phenotype.txt") {
                         return Err(PyFileNotFoundError::new_err("Starting with v1.2.0, hpo3 changed the way \
                             how the ontology is build from JAX-OBO source. It now requires the `genes_to_phenotype.txt` \
                             file. Please check the documentation for more info or add the `transitive=True` argument."));
                     }
-                    return Err(PyFileNotFoundError::new_err(
+                    Err(PyFileNotFoundError::new_err(
                         format!("Unable to open {filename}. Please check if you specified the correct path and all files are present.")
-                    ));
+                    ))
                 }
-                Err(err) => {
-                    return Err(PyRuntimeError::new_err(format!(
-                        "Error loading the ontology. Please check if the data is correct: {err}"
-                    )));
-                }
+                Err(err) => Err(PyRuntimeError::new_err(format!(
+                    "Error loading the ontology. Please check if the data is correct: {err}"
+                ))),
             }
         } else {
             from_binary(data_folder);
-            return Ok(());
+            Ok(())
         }
     }
 

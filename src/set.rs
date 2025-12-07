@@ -837,10 +837,14 @@ impl PyHpoSet {
     ///     print(bytes)
     ///     # >> b'\x00\x00/L'
     ///
-    fn to_bytes(&self) -> Cow<[u8]> {
-        Cow::Owned(self.ids.iter().flat_map(|id| id.as_u32().to_be_bytes()).collect())
+    fn to_bytes(&self) -> Cow<'_, [u8]> {
+        Cow::Owned(
+            self.ids
+                .iter()
+                .flat_map(|id| id.as_u32().to_be_bytes())
+                .collect(),
+        )
     }
-
 
     /// Returns the HPOTerms in the set
     ///
@@ -999,11 +1003,11 @@ impl PyHpoSet {
     /// ----------
     /// bytes: bytes
     ///     A bytes object of the HPOSet
-    /// skip_safety_check: bool
-    ///     if set to ``True``, this method will not ensure that only valid
-    ///     HPOTerms are added to the set. Only enable this if you are 100 %
-    ///     certain that your bytes data is correct. It could cause unexpected
-    ///     behaviour or crashes later on. **default: ``False``**
+    /// safety_check: bool
+    ///     if set to ``True`` (default), this method will ensure that only
+    ///     valid HPOTerms are added to the set. Only disable this if you are
+    ///     100 % certain that your bytes data is correct. It could cause
+    ///     unexpected behaviour or crashes later on. **default: ``True``**
     ///
     /// Returns
     /// -------
@@ -1031,23 +1035,31 @@ impl PyHpoSet {
     ///     # >> 4
     ///
     #[classmethod]
-    #[pyo3(signature = (bytes, skip_safety_check = false))]
-    #[pyo3(text_signature = "(bytes, skip_safety_check=False)")]
-    fn from_bytes(_cls: &Bound<'_, PyType>, bytes: Vec<u8>, skip_safety_check: bool) -> PyResult<Self> {
+    #[pyo3(signature = (bytes, safety_check = true))]
+    #[pyo3(text_signature = "(bytes, safety_check=True)")]
+    pub fn from_bytes(
+        _cls: &Bound<'_, PyType>,
+        bytes: Vec<u8>,
+        safety_check: bool,
+    ) -> PyResult<Self> {
         let iter = bytes.chunks_exact(4);
         if !iter.remainder().is_empty() {
-            return Err(PyValueError::new_err("Invalid bytes"))
+            return Err(PyValueError::new_err("Invalid bytes"));
         }
 
-        let term_exists_check = if skip_safety_check {
-            |_| Ok(())
-        } else {
+        let term_exists_check = if safety_check {
             |id| term_from_id(id).map(|_| ())
+        } else {
+            |_| Ok(())
         };
 
         let ids: HpoGroup = iter
             .map(|id_bytes| {
-                let id = u32::from_be_bytes(id_bytes.try_into().expect("id_bytes is exactly 4 bytes long"));
+                let id = u32::from_be_bytes(
+                    id_bytes
+                        .try_into()
+                        .expect("id_bytes is exactly 4 bytes long"),
+                );
                 term_exists_check(id)?;
                 Ok(id)
             })
@@ -1277,7 +1289,6 @@ impl TryFrom<&[u32]> for PyHpoSet {
         Ok(Self { ids })
     }
 }
-
 
 #[pyclass(name = "SetIterator")]
 struct Iter {

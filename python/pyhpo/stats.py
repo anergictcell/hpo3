@@ -9,7 +9,7 @@ class HPOEnrichment:
         pass
 
     def enrichment(self, *args, **kwargs):
-        raise NotImplemented
+        raise NotImplementedError
 
 
 __all__ = (

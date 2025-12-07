@@ -40,7 +40,7 @@ impl PyHpoTerm {
     /// This method assumes that this operation succeeds
     /// because terms cannot be instantiated from Python
     /// and can only be retrieved from the Ontology
-    fn hpo(&self) -> hpo::HpoTerm {
+    fn hpo(&self) -> hpo::HpoTerm<'_> {
         let ont = ONTOLOGY
             .get()
             .expect("ontology must exist when a term is present");
@@ -520,6 +520,11 @@ impl PyHpoTerm {
 
     /// Returns common ancestor ``HPOTerm``
     ///
+    /// .. note::
+    ///
+    ///     If the two terms have a parent - child relation, the parent
+    ///     term will be included in the output as a ``common ancestor``.
+    ///
     /// Parameters
     /// ----------
     /// other: :class:`HPOTerm`
@@ -547,13 +552,13 @@ impl PyHpoTerm {
     ///
     #[pyo3(text_signature = "($self, other)")]
     fn common_ancestors(&self, other: &PyHpoTerm) -> HashSet<PyHpoTerm> {
-        self.hpo()
-            .common_ancestors(&other.hpo())
-            .iter()
-            .fold(HashSet::new(), |mut set, term| {
+        self.hpo().all_common_ancestors(&other.hpo()).iter().fold(
+            HashSet::new(),
+            |mut set, term| {
                 set.insert(PyHpoTerm::from(term));
                 set
-            })
+            },
+        )
     }
 
     /// Returns the number of direct parents of the term

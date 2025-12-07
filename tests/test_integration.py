@@ -7,16 +7,16 @@ from pyhpo import annotations as an
 
 # Number of terms in HPO Ontology
 # grep "^\[Term\]$" pyhpo/data/hp.obo | wc -l
-N_TERMS = 19484
+N_TERMS = 19533
 
 # Number of genes in the annotation dataset
 # cut -f4 pyhpo/data/phenotype_to_genes.txt | grep -v "^#" | grep -v "^gene_symbol" | sort -u | wc -l  # noqa: E501
 # cut -f1 example_data/2024-03-06/genes_to_phenotype.txt | grep -v "^ncbi_gene_id" | sort -u | wc -l
-N_GENES = 5132
+N_GENES = 5134
 
 # Number of OMIM diseases in the annotation dataset
 # cut -f1,3 pyhpo/data/phenotype.hpoa | grep "^OMIM" | sort -u | cut -f2 | grep -v "NOT" | wc -l  # noqa: E501
-N_OMIM = 8359
+N_OMIM = 8363
 
 # Number of ORPHA diseases in the annotation dataset
 # cut -f1,3 pyhpo/data/phenotype.hpoa | grep "^ORPHA" | sort -u | cut -f2 | grep -v "NOT" | wc -l  # noqa: E501
@@ -175,3 +175,14 @@ class IntegrationFullTest(unittest.TestCase):
         self.assertIsInstance(res[0]["item"], an.Orpha)
         self.assertIsInstance(res[0]["count"], int)
         self.assertIsInstance(res[0]["enrichment"], float)
+
+    def test_custom_information_scores(self):
+        term1 = Ontology.hpo(10885)
+        self.assertEqual(term1.information_content.custom, 0.0)
+
+        term2 = Ontology.hpo(7401)
+        self.assertEqual(term1.information_content.custom, 0.0)
+
+        Ontology.set_custom_information_content([(10885, 1.234)])
+        self.assertAlmostEqual(term1.information_content.custom, 1.234)
+        self.assertAlmostEqual(term2.information_content.custom, 0.0)
