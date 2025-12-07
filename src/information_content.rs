@@ -9,6 +9,7 @@ pub struct PyInformationContent {
     omim: f32,
     orpha: f32,
     gene: f32,
+    custom: f32,
 }
 
 impl From<&hpo::term::InformationContent> for PyInformationContent {
@@ -17,6 +18,7 @@ impl From<&hpo::term::InformationContent> for PyInformationContent {
             omim: value.omim_disease(),
             orpha: value.orpha_disease(),
             gene: value.gene(),
+            custom: value.custom(),
         }
     }
 }
@@ -40,21 +42,29 @@ impl PyInformationContent {
         self.orpha
     }
 
+    /// Returns the custom defined information content
+    #[getter(custom)]
+    pub fn custom(&self) -> f32 {
+        self.custom
+    }
+
     fn __getitem__(&self, key: &str) -> PyResult<f32> {
         match key {
             "omim" => Ok(self.omim()),
             "orpha" => Ok(self.orpha()),
             "gene" => Ok(self.gene()),
+            "custom" => Ok(self.custom()),
             _ => Err(PyKeyError::new_err(format!("Unknown key {}", key))),
         }
     }
 
     fn __repr__(&self) -> String {
         format!(
-            "<InformationContent (Omim: {:.4}, Orpha: {:.4}, Gene: {:.4})>",
+            "<InformationContent (Omim: {:.4}, Oprha: {:.4}, Gene: {:.4}, Custom: {:.4})>",
             self.omim(),
             self.orpha(),
             self.gene(),
+            self.custom(),
         )
     }
 }
@@ -65,6 +75,7 @@ pub enum PyInformationContentKind {
     Omim,
     Orpha,
     Gene,
+    Custom,
 }
 
 impl TryFrom<&str> for PyInformationContentKind {
@@ -76,6 +87,7 @@ impl TryFrom<&str> for PyInformationContentKind {
             "omim" => Ok(PyInformationContentKind::Omim),
             "orpha" => Ok(PyInformationContentKind::Orpha),
             "gene" => Ok(PyInformationContentKind::Gene),
+            "custom" => Ok(PyInformationContentKind::Custom),
             _ => Err(PyKeyError::new_err(format!(
                 "Unknown information content kind {}",
                 value
@@ -90,6 +102,7 @@ impl From<PyInformationContentKind> for hpo::term::InformationContentKind {
             PyInformationContentKind::Omim => Self::Omim,
             PyInformationContentKind::Orpha => Self::Orpha,
             PyInformationContentKind::Gene => Self::Gene,
+            PyInformationContentKind::Custom => Self::Custom,
         }
     }
 }

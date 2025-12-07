@@ -40,7 +40,7 @@ impl PyHpoTerm {
     /// This method assumes that this operation succeeds
     /// because terms cannot be instantiated from Python
     /// and can only be retrieved from the Ontology
-    fn hpo(&self) -> hpo::HpoTerm {
+    fn hpo(&self) -> hpo::HpoTerm<'_> {
         let ont = ONTOLOGY
             .get()
             .expect("ontology must exist when a term is present");

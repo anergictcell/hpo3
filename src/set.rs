@@ -837,7 +837,7 @@ impl PyHpoSet {
     ///     print(bytes)
     ///     # >> b'\x00\x00/L'
     ///
-    fn to_bytes(&self) -> Cow<[u8]> {
+    fn to_bytes(&self) -> Cow<'_, [u8]> {
         Cow::Owned(
             self.ids
                 .iter()
