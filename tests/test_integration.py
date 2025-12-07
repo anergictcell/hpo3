@@ -175,3 +175,14 @@ class IntegrationFullTest(unittest.TestCase):
         self.assertIsInstance(res[0]["item"], an.Orpha)
         self.assertIsInstance(res[0]["count"], int)
         self.assertIsInstance(res[0]["enrichment"], float)
+
+    def test_custom_information_scores(self):
+        term1 = Ontology.hpo(10885)
+        self.assertEqual(term1.information_content.custom, 0.0)
+
+        term2 = Ontology.hpo(7401)
+        self.assertEqual(term1.information_content.custom, 0.0)
+
+        Ontology.set_custom_information_content([(10885, 1.234)])
+        self.assertAlmostEqual(term1.information_content.custom, 1.234)
+        self.assertAlmostEqual(term2.information_content.custom, 0.0)

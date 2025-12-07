@@ -386,6 +386,9 @@ impl PyOntology {
 
     /// Adds custom Information content scores to the Ontology
     ///
+    /// This method can be used once to set custom information scores
+    /// once for the whole Ontology. It can not be used multiple times.
+    ///
     /// Parameters
     /// ----------
     /// scores: list[tuples]
@@ -409,9 +412,9 @@ impl PyOntology {
     ///
     /// .. warning::
     ///
-    ///     This method can have some dangerous side effects.
+    ///     This method might not be thread safe. If you use multi-threading, please ensure that
+    ///     no background tasks are running before setting custom information content scores.
     ///
-    /// Desription TBD
     #[pyo3(text_signature = "($self, scores)")]
     fn set_custom_information_content(&self, scores: Vec<(u32, f32)>) -> PyResult<()> {
         set_custom_ic(&scores)
