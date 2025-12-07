@@ -536,7 +536,7 @@ impl PyOntology {
     ///
     /// Returns
     /// -------
-    /// and the score
+    /// :class:`HPOTerm`
     ///     The ``HPOTerm``
     ///
     /// Raises
